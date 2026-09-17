@@ -1,0 +1,12 @@
+{
+  "name": "es-module",
+  "version": "1.0.0",
+  "description": "ES Modules",
+  "license": "ISC",
+  "author": "Haris",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
