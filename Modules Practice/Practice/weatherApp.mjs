@@ -1,8 +1,5 @@
 import readline from "readline/promises";
 import https from "https";
-import { hostname } from "os";
-import path from "path";
-import { stdout } from "process";
 
 const rl = readline.createInterface({
   input: process.stdin,
