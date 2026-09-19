@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>URL Shortener</title>
+  </head>
+  <body class="">
+    <main class="main-container">
+      <h1 class="h1">URL Shortener</h1>
+      <form class="form">
+        <div class="input-div">
+          <label for="url" class="label">Enter URL:</label>
+          <input type="url" name="url" class="input" />
+        </div>
+        <div class="input-div">
+          <label for="short" class="label">Custom URL (Optional):</label>
+          <input type="text" name="short" class="input" />
+        </div>
+        <button class="btn" type="submit">Shorten</button>
+      </form>
+      <ul class="ul"></ul>
+    </main>
+    <script>
+      const ul = document.querySelector(".ul");
+
+      async function fetchLinksData() {
+        try {
+          const response = await fetch("/links");
+          const data = await response.json();
+        //   console.log(data);
+
+            for(let [short, url] of Object.entries(data)){
+                let li = document.createElement("li")
+                li.innerHTML = `<a href = "${short}" target = "_blank">${window.location.origin}/${short}</a> - ${url}`
+                li.classList.add("li")
+                ul.appendChild(li)
+            }
+
+        } catch (error) {
+          console.log(error);
+        }
+      }
+      document
+        .querySelector(".form")
+        .addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const formData = new FormData(event.target);
+
+          const objFromData = Object.fromEntries(formData);
+          try {
+            const response = await fetch("/shorten", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(objFromData),
+            });
+
+            if (response.ok) {
+              console.log("OK hogya");
+              alert("Good hogya");
+              fetchLinksData();
+            }
+          } catch (error) {
+            console.log(error.message);
+          }
+        });
+      fetchLinksData();
+    </script>
+  </body>
+</html>
