@@ -29,25 +29,22 @@
         try {
           const response = await fetch("/links");
           const data = await response.json();
-        //   console.log(data);
-
             for(let [short, url] of Object.entries(data)){
                 let li = document.createElement("li")
                 li.innerHTML = `<a href = "${short}" target = "_blank">${window.location.origin}/${short}</a> - ${url}`
                 li.classList.add("li")
                 ul.appendChild(li)
             }
-
         } catch (error) {
           console.log(error);
         }
       }
+
       document
         .querySelector(".form")
         .addEventListener("submit", async (event) => {
           event.preventDefault();
           const formData = new FormData(event.target);
-
           const objFromData = Object.fromEntries(formData);
           try {
             const response = await fetch("/shorten", {
@@ -55,7 +52,6 @@
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(objFromData),
             });
-
             if (response.ok) {
               console.log("OK hogya");
               alert("Good hogya");

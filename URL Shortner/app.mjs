@@ -14,7 +14,7 @@ async function serveFile(res, filePath, fileType) {
   } catch (error) {
     if (error.code === "ENOENT") {
       res.writeHead(404, { "Content-Type": "text/plain" });
-      res.end("Requestd Page Not Found");
+      res.end("Requestd File Not Found");
     } else {
       res.writeHead(500, { "Content-Type": "text/plain" });
       res.end("Disk Failure");
@@ -41,7 +41,6 @@ async function saveToFile(links) {
 
 const server = http.createServer(async (req, res) => {
   let { url, method } = req;
-
   if (url === "/" && method === "GET") {
     return serveFile(res, path.join("public", "index.html"), "text/html");
   } else if (url === "/style.css" && method === "GET") {
@@ -58,28 +57,20 @@ const server = http.createServer(async (req, res) => {
     req.on("end", async () => {
       try {
         const { url, short } = JSON.parse(body);
-
         if (!url) {
           res.writeHead(400, { "Content-Type": "text/plain" });
           return res.end("URL is required");
         }
-
         const links = await loadFile();
-
         const shortCode = short || crypto.randomBytes(4).toString("hex");
-        // console.log(shortCode)
         if (links[shortCode]) {
           res.writeHead(400, { "Content-Type": "text/plain" });
           return res.end("Pls Enter New Custom URL, Its is Already exists");
         }
-        // console.log("Running")
-
         links[shortCode] = url;
         await saveToFile(links);
-
         res.writeHead(200, { "Content-Type": "application/json" });
         return res.end(JSON.stringify({ success: true }));
-        // console.log(parsed)
       } catch (error) {
         res.writeHead(404, { "Content-Type": "text/plain" });
         res.end("Route not found");
