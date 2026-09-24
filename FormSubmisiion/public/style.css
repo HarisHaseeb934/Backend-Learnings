@@ -1,0 +1,20 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body{
+    background-color: grey;
+}
+main{
+    margin: auto;
+    width: 300px;
+}
+form div{
+    display: flex;
+    flex-direction: column;
+}
+form button{
+    width: 100%;
+    margin-top: 10px;
+}
