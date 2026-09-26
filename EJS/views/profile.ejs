@@ -8,14 +8,14 @@
   <body>
     <h1>Name: <%= user.username %></h1>
     <% if(user.isPremium) { %>   
-        <p>Badge: Premium Member</p> 
+      <p>Badge: Premium Member</p> 
         <% } else{ %>
-            <p>Badge: Free Tier</p>
-            <% } %>
-            <ul>
-            <% user.skills.forEach(skill => { %>
-                <li><%= skill %></li>
-                <% })%>
-                </ul>
+          <p>Badge: Free Tier</p>
+        <% } %>
+        <ul>
+         <% user.skills.forEach(skill => { %>
+         <li><%= skill %></li>
+         <% })%>
+        </ul>
   </body>
 </html>
