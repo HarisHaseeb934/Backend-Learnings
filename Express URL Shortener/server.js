@@ -30,6 +30,7 @@ async function saveToFile(filePath, data) {
 app.use(express.static("public"));
 
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.get("/", async (req, res) => {
   try {
@@ -40,7 +41,7 @@ app.get("/", async (req, res) => {
       "{links}",
       Object.entries(links)
         .map(([shortCode, url]) => {
-          return `<li><a href = "/${shortCode}" target = "_blank">${req.hostname}/${shortCode}</a></li>`;
+          return `<li><a href = "/${shortCode}" target = "_blank">${req.hostname}/${shortCode}</a><button class = "btn">Delete</button></li>`;
         })
         .join(""),
     );
@@ -59,7 +60,7 @@ app.post("/", async (req, res) => {
     const finalShortCode = shortCode || crypto.randomBytes(4).toString("hex");
 
     if (links[finalShortCode]) {
-      res.status(400).send("Short Code Already Exits");
+      return res.status(400).send("Short Code Already Exits");
     }
 
     links[finalShortCode] = url;
@@ -84,6 +85,17 @@ app.get("/:shortCode", async(req, res) => {
     }
 })
 
+app.delete("/delete", async(req, res) => {
+  const {shortCode} = req.body
+  try{
+    const links = await loadLinks(JSONFile);
+    delete links[shortCode];
+    await saveToFile(JSONFile, links)
+    res.redirect("/")
+  }catch(error){
+    console.log(error)
+  }
+})
 
 app.listen(PORT, () => {
     console.log(`Server is Running on PORT: ${PORT}`)

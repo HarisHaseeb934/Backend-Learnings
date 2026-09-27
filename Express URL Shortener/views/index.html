@@ -28,5 +28,29 @@
         </ul>
       </div>
     </main>
+    <script>
+      document.querySelectorAll(".btn").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+          const sibling = e.target.previousElementSibling;
+          const shortCode = sibling.getAttribute("href").slice(1);
+          try {
+            const response = await fetch("/delete", {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ shortCode }),
+            });
+
+            if (!response.ok) {
+              throw new Error("Reponse is not Correct");
+            }
+            window.location.reload();
+          } catch (error) {
+            console.log(error);
+          }
+        });
+      });
+    </script>
   </body>
 </html>
