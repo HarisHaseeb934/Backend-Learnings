@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>URL Shortener</title>
+</head>
+<body>
+    <main>
+        <form action="/form" method="post">
+            <div>
+                <label for="url">URL</label>
+                <input type="url" name="url" id="url">
+            </div>
+            <div>
+                <label for="shortCode">Short Code</label>
+                <input type="text" name="shortCode" id="shortCode">
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+
+        <ul>
+            <% links.map((link) => {%>
+                <li>
+                    <a href="/<%= link.shortCode %>"><%= link.shortCode %></a>
+                </li>
+            <% }) %>
+        </ul>
+    </main>
+</body>
+</html>
