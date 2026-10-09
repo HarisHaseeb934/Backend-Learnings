@@ -8,7 +8,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node --watch ./task7insert.js"
+    "dev": "node --watch ./task18aggregate.js"
   },
   "dependencies": {
     "mongoose": "^9.10.4"
