@@ -1,0 +1,20 @@
+<%- include('../partials/header') %>
+<main class="url">
+  <h1>Login</h1>
+  <form action="/login" method="POST" class="url-short">
+    <div>
+      <label for="name">Name</label>
+      <input type="text" name="name" id="name">
+    </div>
+    <div>
+      <label for="password">Password</label>
+      <input type="password" name="password" id="password">
+    </div>
+    <div class="check">
+      <input type="checkbox" name="remeber" id="remeber">
+      <label for="remeber">Remeber Me</label>
+    </div>
+    <button>Log in</button>
+  </form>
+</main>
+<%- include('../partials/footer') %>

@@ -1,0 +1,19 @@
+{
+  "name": "url_shortener_mongoose",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --watch --env-file=.env ./src/server.js"
+  },
+  "dependencies": {
+    "ejs": "^7.0.1",
+    "express": "^5.3.0",
+    "mongoose": "^9.11.1",
+    "zod": "^4.6.5"
+  }
+}
