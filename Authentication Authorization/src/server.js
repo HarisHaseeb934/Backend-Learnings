@@ -1,10 +1,11 @@
-import express, { urlencoded } from "express";
+import express from "express";
 import { connectDB } from "./config/db.js";
 import { env } from "./config/env.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import homeRoutes from './routes/homeRoutes.js'
 import authRoutes from './routes/authRoutes.js'
 import cookieParser from "cookie-parser";
+import { verfiyAuthentication } from "./middleware/verifyMiddleware.js";
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.set('view engine', 'ejs')
 app.set('views', './src/views')
 
 app.use(cookieParser())
+app.use(verfiyAuthentication)
 app.use(express.urlencoded({extended: true}))
 
 app.use(authRoutes)
