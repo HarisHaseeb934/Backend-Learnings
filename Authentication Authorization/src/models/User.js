@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-// import { comparePassword, hashPasswordGen } from "../services/authServices.js";
 import argon2 from "argon2";
 
 const userSchema = mongoose.Schema(
@@ -26,7 +25,7 @@ const userSchema = mongoose.Schema(
 );
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified) return next();
+  if (!this.isModified("password")) return next();
   this.password = await argon2.hash(this.password);
 });
 

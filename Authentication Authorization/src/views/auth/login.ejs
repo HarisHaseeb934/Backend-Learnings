@@ -10,7 +10,12 @@
       <label for="password">Password</label>
       <input type="password" name="password" id="password">
     </div>
-    <div class="check">
+    <% if(errors && errors.length > 0){ %>
+      <% errors.forEach(error => { %>
+        <p> <%= error %> </p>
+      <% }) %>
+    <% } %>
+    <div id="check">
       <input type="checkbox" name="remeber" id="remeber">
       <label for="remeber">Remeber Me</label>
     </div>

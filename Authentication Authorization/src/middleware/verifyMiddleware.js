@@ -8,7 +8,6 @@ export const verfiyAuthentication = (req, res, next) => {
     return next();
   }
 
-console.log('running')
   try {
     const decodedToken = verifyToken(token);
     req.user = decodedToken;

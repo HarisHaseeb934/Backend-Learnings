@@ -6,6 +6,8 @@ import homeRoutes from './routes/homeRoutes.js'
 import authRoutes from './routes/authRoutes.js'
 import cookieParser from "cookie-parser";
 import { verfiyAuthentication } from "./middleware/verifyMiddleware.js";
+import session from 'express-session'
+import flash from 'connect-flash'
 
 const app = express();
 
@@ -13,7 +15,18 @@ app.set('view engine', 'ejs')
 app.set('views', './src/views')
 
 app.use(cookieParser())
+
+app.use(session({secret: 'my_secretKey', resave: false, saveUninitialized: false}))
+app.use(flash())
+
+
 app.use(verfiyAuthentication)
+
+app.use((req, res, next) => {
+  res.locals.user = req.user
+  return next()
+})
+
 app.use(express.urlencoded({extended: true}))
 
 app.use(authRoutes)
