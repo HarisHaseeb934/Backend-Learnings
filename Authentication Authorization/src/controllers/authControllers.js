@@ -16,13 +16,11 @@ export const postLogin = async (req, res) => {
   const result = loginUserSchema.safeParse(req.body);
 
   if (!result.success) {
-    // const errorMessage = result.error.issues[0].message;
-    // const formattedErrors = result.error.format();
-    // const fieldErrors = result.error.flatten().fieldErrors;
-    console.log(formattedErrors);
-    req.flash("error", formattedErrors);
+    const errorMessage = result.error.flatten().fieldErrors;
+    req.flash("error", errorMessage);
     return res.redirect("/login");
   }
+
   const { email, password } = result.data;
   const userExists = await checkEmailExits(email);
   if (!userExists) {
@@ -44,12 +42,15 @@ export const getRegistrationPage = async (req, res) => {
 };
 
 export const postRegister = async (req, res) => {
-  const { data, error } = registerUserSchema.safeParse(req.body);
-  if (error) {
-    res.flash("error", error.errors[0].message);
-    res.redirect("/register");
+  const result = registerUserSchema.safeParse(req.body);
+  if (!result.success) {
+    const errorMessageObj = result.error.flatten().fieldErrors;
+    console.log(errorMessageObj)
+    req.flash("error", errorMessageObj);
+    return res.redirect("/register");
   }
-  const { name, email, password } = data;
+
+  const { name, email, password } = result.data;
   const userExits = await checkEmailExits(email);
   if (userExits) {
     req.flash("error", "User already exists");
