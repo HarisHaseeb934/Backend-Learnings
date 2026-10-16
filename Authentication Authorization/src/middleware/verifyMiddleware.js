@@ -2,7 +2,6 @@ import { verifyToken } from "../services/authServices.js";
 
 export const verfiyAuthentication = (req, res, next) => {
   const token = req.cookies.access_token;
-  console.log(token)
   if (!token) {
     req.user = null;
     return next();

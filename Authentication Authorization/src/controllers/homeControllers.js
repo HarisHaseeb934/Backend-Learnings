@@ -1,8 +1,10 @@
-import { UrlShortener } from "../models/UrlShortener.js";
 import crypto from "crypto";
+import { UrlShortener } from "../models/URLShortener.js";
 
 export const getHomePage = async (req, res) => {
-  const links = await UrlShortener.find().select("url shortCode -_id");
+  if(!req.user) return res.redirect("/login")
+    console.log("ID: " + req.user._id)
+  const links = await UrlShortener.find({user: req.user._id}).select("url shortCode -_id");
   res.render("index", { links, host: req.host });
 };
 
@@ -17,7 +19,8 @@ export const getFromData = async (req, res) => {
       .status(400)
       .json({ success: false, message: "Short Code Already Exists" });
   }
-  await UrlShortener.create({ shortCode: finalShortCode, url });
+  console.log("ID: " + req.user._id)
+  await UrlShortener.create({ shortCode: finalShortCode, url, user: req.user._id});
   res.status(301).redirect("/");
 };
 
