@@ -1,4 +1,4 @@
-<%- include('partials/header') %>
+<%- include('./partials/header') %>
 
 <main class="url">
         <h1>URL Shortener</h1>
@@ -15,16 +15,10 @@
         </form>
         <h2>Links</h2>
         <ul>
-            <% links.map(({shortCode, url}) => { %>
-                <li><a href='/<%= shortCode %>' target="_blank"><%= host %>/<%= shortCode %></a></li>
+            <% links.map(({shortCode, url, id}) => { %>
+                <li class="li"><a href='/<%= shortCode %>' target="_blank"><%= host %>/<%= shortCode %></a> <a href="/edit/<%= id %>">Edit</a> <form action="/delete/<%= id %>" method="post"><button type="submit">Delete</button></form></li>
             <% }) %>
         </ul>
     </main>
 
-    <% if(user){ %>
-        <h1>Logged In</h1>
-    <% }else { %>
-        <h1>Not Logged In</h1>
-    <% } %>
-
-<%- include('partials/footer') %>
+<%- include('./partials/footer') %>

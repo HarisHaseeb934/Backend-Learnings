@@ -1,6 +1,7 @@
 import { User } from "../models/User.js";
 import argon2 from "argon2";
 import jwt from "jsonwebtoken";
+import { UrlShortener } from "../models/URLShortener.js";
 
 export const checkEmailExits = async (email) => {
   return await User.findOne({ email: email });
@@ -27,3 +28,7 @@ export const genrateToken = (_id, name, email) => {
 export const verifyToken = (token) => {
   return jwt.verify(token, process.env.JWT_SECRET_KEY);
 };
+
+export const deleteLinkFromUser = async(id) => {
+  return await UrlShortener.findByIdAndDelete(id)
+}

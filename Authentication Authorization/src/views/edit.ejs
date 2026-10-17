@@ -1,0 +1,22 @@
+<%- include('./partials/header') %>
+
+<main class="url">
+  <h1>URL Shortener</h1>
+  <form action="/edit/<%= link._id %>" method="post" class="url-short">
+    <div>
+      <label for="url">URL:</label>
+      <input type="url" name="url" value="<%= link.url %>" />
+    </div>
+    <div>
+      <label for="shortCode">Short Code:</label>
+      <input
+        type="text"
+        name="shortCode"
+        value="<%= link.shortCode %>"
+      />
+    </div>
+    <button type="submit">Update</button>
+  </form>
+</main>
+
+<%- include('./partials/footer') %>

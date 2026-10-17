@@ -10,7 +10,7 @@ export const loginUserSchema = z.object({
   password: z
     .string()
     .trim()
-    .min(8, { message: "Password must be greater than 3 Charcters" })
+    .min(3, { message: "Password must be greater than 3 Charcters" })
     .max(100, { message: "Password must be Lower than 100 Charcters" }),
 });
 
