@@ -1,7 +1,9 @@
 import {
   checkEmailExits,
+  createAccessToken,
+  createRefreshToken,
+  createSession,
   createUser,
-  genrateToken,
 } from "../services/authServices.js";
 import {
   loginUserSchema,
@@ -32,8 +34,36 @@ export const postLogin = async (req, res) => {
     req.flash("error", "User or Password is invalid");
     return res.redirect("/login");
   }
-  const token = genrateToken(userExists._id, userExists.name, userExists.email);
-  res.cookie("access_token", token);
+
+  const session = await createSession({
+    user: userExists._id,
+    refreshToken: "temp",
+    userAgent: req.header("user-agent"),
+    ipAddress: req.ip,
+  });
+
+  const accessToken = createAccessToken({
+    id: userExists._id,
+    name: userExists.name,
+    email: userExists.email,
+    sessionId: session._id,
+  });
+  const refreshToken = createRefreshToken({ sessionId: session._id });
+
+  session.refresh = refreshToken;
+  await session.save();
+
+  const baseConfig = { httpOnly: true, secure: true };
+
+  res.cookie("access_token", accessToken, {
+    ...baseConfig,
+    maxAge: 15 * 60 * 1000,
+  });
+  res.cookie("refresh_token", refreshToken, {
+    ...baseConfig,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
   res.redirect("/");
 };
 
@@ -45,7 +75,7 @@ export const postRegister = async (req, res) => {
   const result = registerUserSchema.safeParse(req.body);
   if (!result.success) {
     const errorMessageObj = result.error.flatten().fieldErrors;
-    console.log(errorMessageObj)
+    console.log(errorMessageObj);
     req.flash("error", errorMessageObj);
     return res.redirect("/register");
   }

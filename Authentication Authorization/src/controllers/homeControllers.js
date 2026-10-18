@@ -5,7 +5,7 @@ import { deleteLinkFromUser } from "../services/authServices.js";
 
 export const getHomePage = async (req, res) => {
   if (!req.user) return res.redirect("/login");
-  const links = await UrlShortener.find({ user: req.user._id });
+  const links = await UrlShortener.find({ user: req.user.id });
   res.render("index", { links, host: req.host });
 };
 
@@ -23,7 +23,7 @@ export const getFromData = async (req, res) => {
   await UrlShortener.create({
     shortCode: finalShortCode,
     url,
-    user: req.user._id,
+    user: req.user.id,
   });
   return res.status(301).redirect("/");
 };
@@ -50,15 +50,15 @@ export const updateLink = async (req, res) => {
   }
   const { url, shortCode } = req.body;
   const link = await UrlShortener.updateOne(
-    {_id: result.data},
-    {$set: {url, shortCode}}
+    { _id: result.data },
+    { $set: { url, shortCode } },
   );
-  console.log(link)
-  res.redirect("/")
+  console.log(link);
+  res.redirect("/");
 };
 
-export const deleteLink = async(req, res) => {
+export const deleteLink = async (req, res) => {
   const id = req.params.id;
-  await deleteLinkFromUser(id)
-  res.redirect("/")
-}
+  await deleteLinkFromUser(id);
+  res.redirect("/");
+};

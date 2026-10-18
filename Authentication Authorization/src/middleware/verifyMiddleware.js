@@ -1,19 +1,62 @@
-import { verifyToken } from "../services/authServices.js";
+import { refreshTokens, verifyToken } from "../services/authServices.js";
 
-export const verfiyAuthentication = (req, res, next) => {
-  const token = req.cookies.access_token;
-  if (!token) {
-    req.user = null;
+// export const verfiyAuthentication = (req, res, next) => {
+//   const token = req.cookies.access_token;
+//   if (!token) {
+//     req.user = null;
+//     return next();
+//   }
+
+//   try {
+//     const decodedToken = verifyToken(token);
+//     req.user = decodedToken;
+//     console.log(req.user)
+//     return next();
+//   } catch (error) {
+//     req.user = null;
+//     return next();
+//   }
+// };
+
+export const verfiyAuthentication = async (req, res, next) => {
+  const accessToken = req.cookies.access_token;
+  const refreshToken = req.cookies.refresh_token;
+
+  req.user = null;
+
+  if (!accessToken && !refreshToken) {
     return next();
   }
 
-  try {
-    const decodedToken = verifyToken(token);
+  if (accessToken) {
+    const decodedToken = verifyToken(accessToken);
     req.user = decodedToken;
-    console.log(req.user)
-    return next();
-  } catch (error) {
-    req.user = null;
     return next();
   }
+
+  if (refreshToken) {
+    try {
+      const { accessToken, refreshToken, user } =
+        await refreshTokens(refreshToken);
+        console.log("user: " , user)
+      req.user = user;
+
+      const baseConfig = { httpOnly: true, secure: true };
+
+      res.cookie("access_token", accessToken, {
+        ...baseConfig,
+        maxAge: 15 * 60 * 1000,
+      });
+      res.cookie("refresh_token", refreshToken, {
+        ...baseConfig,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return next();
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  return next();
 };

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import argon2 from "argon2";
+import { Session } from "./Session.js";
 
 const userSchema = mongoose.Schema(
   {
@@ -32,5 +33,12 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.comparePassword = async function (password) {
   return await argon2.verify(this.password, password);
 };
+
+userSchema.pre('findOneAndDelete', async function(next){
+  const {_id: id} = this.getQuery()
+  if(id){
+    await Session.deleteMant({user: id})
+  }
+})
 
 export const User = mongoose.model("user", userSchema);
