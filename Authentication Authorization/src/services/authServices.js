@@ -69,7 +69,7 @@ export const refreshTokens = async (refreshToken) => {
     const accessToken = createAccessToken(userInfo);
     const refreshToken = createRefreshToken({ sessionId: session._id });
 
-    session.refresh = refreshToken;
+    session.refreshToken = refreshToken;
     await session.save();
 
     return {
