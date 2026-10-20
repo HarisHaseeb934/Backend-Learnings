@@ -75,9 +75,14 @@ export const refreshTokens = async (refreshToken) => {
     return {
       accessToken,
       refreshToken,
-      user: userInfo
-    }
+      user: userInfo,
+    };
   } catch (error) {
     console.log(error);
+    return null;
   }
 };
+
+export const clearSession = async(session) => {
+  return await Session.findByIdAndDelete(session)
+}

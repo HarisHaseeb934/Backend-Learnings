@@ -1,22 +1,7 @@
-import { refreshTokens, verifyToken } from "../services/authServices.js";
-
-// export const verfiyAuthentication = (req, res, next) => {
-//   const token = req.cookies.access_token;
-//   if (!token) {
-//     req.user = null;
-//     return next();
-//   }
-
-//   try {
-//     const decodedToken = verifyToken(token);
-//     req.user = decodedToken;
-//     console.log(req.user)
-//     return next();
-//   } catch (error) {
-//     req.user = null;
-//     return next();
-//   }
-// };
+import {
+  refreshTokens,
+  verifyToken,
+} from "../services/authServices.js";
 
 export const verfiyAuthentication = async (req, res, next) => {
   const accessToken = req.cookies.access_token;
@@ -38,7 +23,7 @@ export const verfiyAuthentication = async (req, res, next) => {
     try {
       const { accessToken, refreshToken, user } =
         await refreshTokens(refreshToken);
-        console.log("user: " , user)
+      console.log("user: ", user);
       req.user = user;
 
       const baseConfig = { httpOnly: true, secure: true };

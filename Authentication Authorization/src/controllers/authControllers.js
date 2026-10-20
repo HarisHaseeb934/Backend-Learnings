@@ -1,5 +1,6 @@
 import {
   checkEmailExits,
+  clearSession,
   createAccessToken,
   createRefreshToken,
   createSession,
@@ -87,7 +88,37 @@ export const postRegister = async (req, res) => {
     return res.redirect("/register");
   }
   const register = await createUser({ name, email, password });
-  res.redirect("/login");
+
+  const session = await createSession({
+    user: register._id,
+    refreshToken: "temp",
+    userAgent: req.header("user-agent"),
+    ipAddress: req.ip,
+  });
+
+  const accessToken = createAccessToken({
+    id: register._id,
+    name: register.name,
+    email: register.email,
+    sessionId: session._id,
+  });
+  const refreshToken = createRefreshToken({ sessionId: session._id });
+
+  session.refreshToken = refreshToken;
+  await session.save();
+
+  const baseConfig = { httpOnly: true, secure: true };
+
+  res.cookie("access_token", accessToken, {
+    ...baseConfig,
+    maxAge: 15 * 60 * 1000,
+  });
+  res.cookie("refresh_token", refreshToken, {
+    ...baseConfig,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  res.redirect("/");
 };
 
 export const getMe = (req, res) => {
@@ -95,7 +126,11 @@ export const getMe = (req, res) => {
   return res.send(`<h1>${req.user.name} - ${req.user.email}</h1>`);
 };
 
-export const logout = (req, res) => {
+export const logout = async (req, res) => {
+  await clearSession(req.user.sessionId);
+
   res.clearCookie("access_token");
+  res.clearCookie("refresh_token");
+
   return res.redirect("/login");
 };

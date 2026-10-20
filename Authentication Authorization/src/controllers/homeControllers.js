@@ -53,7 +53,6 @@ export const updateLink = async (req, res) => {
     { _id: result.data },
     { $set: { url, shortCode } },
   );
-  console.log(link);
   res.redirect("/");
 };
 
