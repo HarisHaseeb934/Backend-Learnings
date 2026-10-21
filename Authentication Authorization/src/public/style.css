@@ -59,13 +59,67 @@ h1 {
   }
 }
 
-#check{
+#check {
   display: flex;
   flex-direction: row;
   gap: 5px;
 }
 
-.li{
+.li {
   display: flex;
   justify-content: space-between;
+}
+
+.profile-card {
+  max-width: 500px;
+  width: 100%;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  border: 1px;
+  box-shadow: 2px 1px 3px 0px;
+  .profile-detail {
+    border-radius: 10px 10px 0px 0px ;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #4c98dd;
+    padding: 20px;
+    color: white;
+    .letter {
+      font-size: 40px;
+      background: #84b9e8;
+      color: white;
+      border-radius: 50%;
+      border: 1px solid white;
+      width: 55px;
+      height: 55px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .details {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+  }
+  .profile-links {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    place-items: center; 
+    gap: 10px;
+    .links-div{
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 3px;   
+      .heading-links{
+        font-weight: bold;
+      }
+    }
+  }
 }

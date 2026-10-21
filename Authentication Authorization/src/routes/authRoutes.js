@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getLoginPage, getMe, getRegistrationPage, logout, postLogin, postRegister } from '../controllers/authControllers.js'
+import { getLoginPage, getMe, getProfilePage, getRegistrationPage, logout, postLogin, postRegister } from '../controllers/authControllers.js'
 
 const router = Router()
 
@@ -12,5 +12,7 @@ router.post("/login", postLogin)
 router.get("/logout", logout)
 
 router.route("/me").get(getMe)
+
+router.route("/profile").get(getProfilePage)
 
 export default router

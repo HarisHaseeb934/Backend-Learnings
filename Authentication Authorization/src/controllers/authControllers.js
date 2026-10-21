@@ -1,3 +1,5 @@
+import { UrlShortener } from "../models/URLShortener.js";
+import { User } from "../models/User.js";
 import {
   checkEmailExits,
   clearSession,
@@ -133,4 +135,23 @@ export const logout = async (req, res) => {
   res.clearCookie("refresh_token");
 
   return res.redirect("/login");
+};
+
+export const getProfilePage = async (req, res) => {
+  if (!req.user) res.redirect("/login");
+
+  const user = await User.findById(req.user.id);
+  if (!user) res.redirect("/login");
+
+  const shortLinks = await UrlShortener.find({ user: user._id });
+
+  res.render("auth/profile", {
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      shortLinks: shortLinks,
+      createdAt: user.createdAt,
+    },
+  });
 };

@@ -1,0 +1,31 @@
+<%- include("../partials/header") %>
+
+<main class="profile-main">
+  <h1>Your Profile</h1>
+  <div class="profile-card">
+    <div class="profile-detail">
+      <div class="letter"><%= user.name.charAt(0).toUpperCase() %></div>
+      <div class="details">
+        <p><%= user.name.toUpperCase() %></p>
+        <p><%= user.email %></p>
+        <p>Member Since: <%= new Date(user.createdAt).toLocaleDateString() %></p>
+      </div>
+    </div>
+    <div class="profile-links">
+        <div class="links-div">
+            <p><%= user.shortLinks ? user.shortLinks.length : 0 %></p>
+            <p class="heading-links">Links Created</p>
+        </div>
+        <div class="links-div">
+            <p>0</p>
+            <p class="heading-links">Total Clicks</p>
+        </div>
+        <div class="links-div">
+            <p>Today</p>
+            <p class="heading-links">Last Active</p>
+        </div>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>
