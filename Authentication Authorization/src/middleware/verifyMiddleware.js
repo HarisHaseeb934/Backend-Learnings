@@ -1,7 +1,4 @@
-import {
-  refreshTokens,
-  verifyToken,
-} from "../services/authServices.js";
+import { refreshTokens, verifyToken } from "../services/authServices.js";
 
 export const verfiyAuthentication = async (req, res, next) => {
   const accessToken = req.cookies.access_token;
@@ -21,18 +18,18 @@ export const verfiyAuthentication = async (req, res, next) => {
 
   if (refreshToken) {
     try {
-      const { accessToken, refreshToken, user } =
+      const { access_Token, refresh_Token, user } =
         await refreshTokens(refreshToken);
-      console.log("user: ", user);
+        
       req.user = user;
 
       const baseConfig = { httpOnly: true, secure: true };
 
-      res.cookie("access_token", accessToken, {
+      res.cookie("access_token", access_Token, {
         ...baseConfig,
         maxAge: 15 * 60 * 1000,
       });
-      res.cookie("refresh_token", refreshToken, {
+      res.cookie("refresh_token", refresh_Token, {
         ...baseConfig,
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });

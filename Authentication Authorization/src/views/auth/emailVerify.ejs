@@ -1,0 +1,23 @@
+<%- include('../partials/header') %>
+
+<main class="verify-main">
+  <div>You are logged in</div>
+  <div class="email-sec">
+    <p><span>Email: <%= email %></span></p>
+    <p>
+      Your Email has not been verified yet. Please verify your email by entering
+      the 8 8-digit code or request a new verification link
+    </p>
+    <form action="/resend-verification-link" method="post">
+      <button type="submit">Resend Verification Link</button>
+    </form>
+  </div>
+
+  <form action="/verify-email-token" method="get" class="email-form">
+    <input type="text" placeholder="Enter 8-digit Verification Code" name="token"/>
+    <input type="hidden" value = '<%= email %>' name="email">
+    <button type="submit">Verify Code</button>
+  </form>
+</main>
+
+<%- include('../partials/footer') %>

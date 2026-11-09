@@ -1,8 +1,11 @@
 import { User } from "../models/User.js";
 import argon2 from "argon2";
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { UrlShortener } from "../models/URLShortener.js";
 import { Session } from "../models/Session.js";
+import { EmailVerificationToken } from "../models/EmailVerificationToken.js";
+import mongoose from "mongoose";
 
 export const checkEmailExits = async (email) => {
   return await User.findOne({ email: email });
@@ -63,6 +66,7 @@ export const refreshTokens = async (refreshToken) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      isEmailValid: register.isEmailVerified,
       session: session._id,
     };
 
@@ -83,6 +87,61 @@ export const refreshTokens = async (refreshToken) => {
   }
 };
 
-export const clearSession = async(session) => {
-  return await Session.findByIdAndDelete(session)
+export const clearSession = async (session) => {
+  return await Session.findByIdAndDelete(session);
+};
+
+export const generateRandomToken = (digit = 8) => {
+  const min = 10 ** (digit - 1);
+  const max = 10 ** digit;
+
+  return crypto.randomInt(min, max).toString();
+};
+
+export const insertEmailVerfi = async (data) => {
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      await EmailVerificationToken.deleteMany({ user: data.user });
+      return await EmailVerificationToken.create([data], {
+        session,
+      });
+    });
+  } catch (error) {
+    console.error("Transaction failed and was fully rolled back:", error);
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
+export const createVerifyEmailLink = ({ email, token }) => {
+  const url = new URL(`${process.env.FORNTEND_URL}/verify-email-token`);
+  url.searchParams.append("token", token);
+  url.searchParams.append("email", email);
+
+  return url.toString();
+};
+
+export const findVerificationEmailToken = async ({ token, email }) => {
+  const tokenObj = await EmailVerificationToken.findOne({ token });
+  if (!tokenObj) return null;
+
+  const user = await User.findById(tokenObj.user)
+
+  if (!user) return null;
+
+  return {
+    userId: user._id,
+    email: user.email,
+    token: tokenObj.token,
+  }
+};
+
+export const verifyUserEmailAndUpdate = async(userId) => {
+  return await User.findByIdAndUpdate(userId, {$set: {isEmailVerified: true}}, {new: true, runValidators: true})
+}
+
+export const clearVerifyEmailToken = async(userId) => {
+  return await EmailVerificationToken.deleteMany({user: userId})
 }

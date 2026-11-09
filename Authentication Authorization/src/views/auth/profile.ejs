@@ -25,6 +25,14 @@
             <p class="heading-links">Last Active</p>
         </div>
     </div>
+    <div class="verification">
+      Email Verification <% if(user.isEmailValid){ %>
+        <p class="verified">Verified</p>
+      <% }else{ %>
+        <p class="not-verified">Not Verified</p>
+        <a href="/resend-verification">Verify Now</a>
+      <% } %>
+    </div>
   </div>
 </main>
 

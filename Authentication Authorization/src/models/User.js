@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import argon2 from "argon2";
 import { Session } from "./Session.js";
+import { EmailVerificationToken } from "./EmailVerificationToken.js";
 
 const userSchema = mongoose.Schema(
   {
@@ -21,6 +22,10 @@ const userSchema = mongoose.Schema(
       required: true,
       trim: true,
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false
+    }
   },
   { timestamps: true },
 );
@@ -37,7 +42,8 @@ userSchema.methods.comparePassword = async function (password) {
 userSchema.pre('findOneAndDelete', async function(next){
   const {_id: id} = this.getQuery()
   if(id){
-    await Session.deleteMant({user: id})
+    await Session.deleteMany({user: id})
+    await EmailVerificationToken.deleteMany({user: id})
   }
 })
 
