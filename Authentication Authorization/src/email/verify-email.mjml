@@ -1,0 +1,44 @@
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family = 'Arial, sans-serif' />
+    </mj-attributes>
+  </mj-head>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-text align = 'center' font-weight = 'bold' font-size = '22px'>Verify Your Email Address</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section>
+      <mj-column>
+        <mj-text>Thanks for signing up! Please verify your email to complete your registration</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section>
+      <mj-column>
+        <mj-text>Your verification code</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color = '#EDE8E8' padding = '10px'>
+      <mj-column>
+        <mj-text align = 'center' font-size = '20px'><%= token %></mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section>
+      <mj-column>
+        <mj-text>Alternatively you can directly verify your account by clicking below </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section>
+      <mj-column>
+        <mj-button href="<%= link %>">Verify My Email</mj-button>
+      </mj-button>
+    </mj-section>
+    <mj-section>
+      <mj-column>
+        <mj-text>if you dont sign up, you can safely ignore this.</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

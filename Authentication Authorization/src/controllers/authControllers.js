@@ -1,6 +1,10 @@
-import { sendMail } from "../lib/nodeMail.js";
+// import { sendMail } from "../lib/nodeMail.js";
+import { sendMail } from "../lib/resendMail.js";
 import { UrlShortener } from "../models/URLShortener.js";
 import { User } from "../models/User.js";
+import fs from "fs/promises";
+import path from "path";
+import ejs from "ejs";
 import {
   checkEmailExits,
   clearSession,
@@ -20,6 +24,7 @@ import {
   registerUserSchema,
   verifyEmail,
 } from "../validators/userValidationSchema.js";
+import mjml2html from "mjml";
 
 export const getLoginPage = async (req, res) => {
   res.render("auth/login", { errors: req.flash("error") });
@@ -181,7 +186,7 @@ export const resendVerificationLink = async (req, res) => {
 
   const randomToken = generateRandomToken();
 
-  const emailVerifi = await insertEmailVerfi({
+  await insertEmailVerfi({
     user: req.user.id,
     token: randomToken,
   });
@@ -191,34 +196,38 @@ export const resendVerificationLink = async (req, res) => {
     token: randomToken,
   });
 
+  const mjmlTemplate = await fs.readFile(
+    path.join(import.meta.dirname, "..", "email", "verify-email.mjml"),
+    "utf-8",
+  );
+  const ejsRender = ejs.render(mjmlTemplate, { token: randomToken, link });
+
+  const { html } = await mjml2html(ejsRender);
+
   await sendMail({
     to: req.user.email,
     subject: "Verify Your Email",
-    html: `
-    <h1>Click the Link Below to Verify Email</h1>
-    <p>You can use this Token: <code>${randomToken}</code></p>
-    <a href = "${link}">Verify Email</a>
-    `,
+    html,
   });
 
   res.redirect("/resend-verification");
 };
 
-export const verifyEmailToken = async(req, res) => {
-  const result = verifyEmail.safeParse(req.query)
-  if(!result.success){
+export const verifyEmailToken = async (req, res) => {
+  const result = verifyEmail.safeParse(req.query);
+  if (!result.success) {
     const errorObject = result.error.flatten().fieldErrors;
-    req.flash('error', errorObject)
-    return res.redirect('/resend-verification')
+    req.flash("error", errorObject);
+    return res.redirect("/resend-verification");
   }
 
-  const token = await findVerificationEmailToken(result.data)
+  const token = await findVerificationEmailToken(result.data);
 
-  if(!token) return res.send('Verification link is invalid or expired')
+  if (!token) return res.send("Verification link is invalid or expired");
 
-  await verifyUserEmailAndUpdate(token.userId)
+  await verifyUserEmailAndUpdate(token.userId);
 
-  await clearVerifyEmailToken(token.userId)
+  await clearVerifyEmailToken(token.userId);
 
-  res.redirect('/profile')
-}
+  res.redirect("/profile");
+};

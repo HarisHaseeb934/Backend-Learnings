@@ -124,16 +124,16 @@ export const createVerifyEmailLink = ({ email, token }) => {
 };
 
 export const findVerificationEmailToken = async ({ token, email }) => {
-  const tokenObj = await EmailVerificationToken.findOne({ token });
-  if (!tokenObj) return null;
+  const tokenObj = await EmailVerificationToken.findOne({ token }).populate('user');
+  // if (!tokenObj) return null;
 
-  const user = await User.findById(tokenObj.user)
+  // const user = await User.findById(tokenObj.user)
 
-  if (!user) return null;
-
+  if (!tokenObj || !tokenObj.user) return null;
+  console.log(tokenObj)
   return {
-    userId: user._id,
-    email: user.email,
+    userId: tokenObj.user._id,
+    email: tokenObj.user.email,
     token: tokenObj.token,
   }
 };
