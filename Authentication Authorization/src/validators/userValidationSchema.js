@@ -1,5 +1,7 @@
 import z from "zod";
 
+const nameSchema = z.string().trim().min(3, {message: 'Minimun Length is 3 Characters'}).max(100, {message: 'Maximum Length is 100 Characters'})
+
 export const loginUserSchema = z.object({
   email: z
     .string()
@@ -25,4 +27,8 @@ export const registerUserSchema = loginUserSchema.extend({
 export const verifyEmail = z.object({
   token: z.string().trim().length(8),
   email: z.string().trim().email()
+})
+
+export const editProfileSchema = z.object({
+  name: nameSchema
 })

@@ -20,11 +20,13 @@ import {
   verifyUserEmailAndUpdate,
 } from "../services/authServices.js";
 import {
+  editProfileSchema,
   loginUserSchema,
   registerUserSchema,
   verifyEmail,
 } from "../validators/userValidationSchema.js";
 import mjml2html from "mjml";
+import AppError from "../utilis/AppError.js";
 
 export const getLoginPage = async (req, res) => {
   res.render("auth/login", { errors: req.flash("error") });
@@ -229,5 +231,32 @@ export const verifyEmailToken = async (req, res) => {
 
   await clearVerifyEmailToken(token.userId);
 
+  res.redirect("/profile");
+};
+
+export const getEditProfilePage = (req, res, next) => {
+  if (!req.user) return next(new AppError("user is not found", 400));
+  console.log(req.user.name);
+  res.render("auth/editProfile", {
+    name: req.user.name,
+    errors: req.flash("errors"),
+  });
+};
+
+export const getEditProfile = async (req, res, next) => {
+  const result = editProfileSchema.safeParse(req.body);
+  if (!result.success) {
+    const errorObject = result.error.flatten().fieldErrors;
+    req.flash("errors", errorObject);
+    console.log(errorObject);
+    return res.redirect("/edit-profile");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    { $set: { name: result.data.name } },
+    { new: true, runValidators: true },
+  );
+  if (!user) return next(new AppError("Error Occurs", 404));
   res.redirect("/profile");
 };
