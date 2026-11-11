@@ -24,9 +24,11 @@ import {
   loginUserSchema,
   registerUserSchema,
   verifyEmail,
+  verifyPasswords,
 } from "../validators/userValidationSchema.js";
 import mjml2html from "mjml";
 import AppError from "../utilis/AppError.js";
+import z from "zod";
 
 export const getLoginPage = async (req, res) => {
   res.render("auth/login", { errors: req.flash("error") });
@@ -260,3 +262,39 @@ export const getEditProfile = async (req, res, next) => {
   if (!user) return next(new AppError("Error Occurs", 404));
   res.redirect("/profile");
 };
+
+export const getChangePasswordPage = (req, res, next) => {
+  if(!req.user) return res.redirect('/')
+  res.render('auth/changePassword', {errors: req.flash('errors'), singleError: req.flash('singleError')})
+}
+
+export const postChangePassword = async(req, res, next) => {
+  const result = verifyPasswords.safeParse(req.body)
+  if(!result.success){
+    // const errorObject = result.error.flatten().fieldErrors;
+    const errorObject = z.flattenError(result.error)
+    req.flash("errors", Object.entries(errorObject.fieldErrors))
+    return res.redirect('/change-password')
+  }
+
+  const user = await User.findById(req.user.id);
+
+  if(!user){
+    req.flash("errors", "Users id not Exists")
+    res.redirect('/')
+  }
+
+  const isMatch = await user.comparePassword(result.data.currentPassword)
+
+  console.log(isMatch)
+
+  if(!isMatch){
+    req.flash("singleError", 'Enter Correct Password')
+    return res.redirect('/change-password')
+  }
+
+  user.password = result.data.newPassword
+  await user.save()
+  
+  res.redirect('/profile')
+}

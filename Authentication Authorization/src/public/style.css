@@ -223,3 +223,44 @@ h1 {
     }
   }
 }
+
+.changePass{
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 1px 2px 5px 2px;
+  padding: 25px;
+  margin: 30px auto;
+  form{
+    display: flex;
+    flex-direction: column;
+    margin: 30px;
+    gap: 10px;
+    input{
+      padding: 5px 10px;
+      outline: none;
+    }
+    div{
+      background-color: #acd3f5;
+      padding: 20px;
+      font-weight: bold;
+      ul{
+        font-weight: normal;
+        padding: 0px 20px;
+
+      }
+    }
+    button{
+      padding: 8px;
+      background: #4c98dd;
+      color: white;
+      border: none;
+    }
+  }
+}
+
+.error{
+  border-left: 2px solid red;
+  background-color: rgb(247, 202, 202);
+  color: red;
+  padding: 5px;
+}

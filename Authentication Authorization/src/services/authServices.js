@@ -43,6 +43,7 @@ export const createAccessToken = (payload) => {
     expiresIn: process.env.JWT_ACCESS_EXPIRY,
   });
 };
+
 export const createRefreshToken = (payload) => {
   return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRY,
