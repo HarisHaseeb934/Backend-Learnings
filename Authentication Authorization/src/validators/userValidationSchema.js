@@ -37,23 +37,36 @@ export const editProfileSchema = z.object({
   name: nameSchema,
 });
 
-export const verifyPasswords = z.object({
-  currentPassword: z
+export const verifyPasswords = z
+  .object({
+    currentPassword: z
+      .string()
+      .trim()
+      .min(3, { message: "Current Password must be greater than 3 Charcters" })
+      .max(100, {
+        message: "Current Password must be Lower than 100 Charcters",
+      }),
+    newPassword: z
+      .string()
+      .trim()
+      .min(3, { message: "New Password must be greater than 3 Charcters" })
+      .max(100, { message: "New Password must be Lower than 100 Charcters" }),
+    confirmPassword: z
+      .string()
+      .trim()
+      .min(3, { message: "Confirm Password must be greater than 3 Charcters" })
+      .max(100, {
+        message: "Confirm Password must be Lower than 100 Charcters",
+      }),
+  })
+  .refine((data) => data.confirmPassword === data.newPassword, {
+    error: "Confirm Password and New Password Must Match",
+    path: ["confirmPassword"],
+  });
+
+export const emailSchema = z.object({
+  registerEmail: z
     .string()
     .trim()
-    .min(3, { message: "Current Password must be greater than 3 Charcters" })
-    .max(100, { message: "Current Password must be Lower than 100 Charcters" }),
-  newPassword: z
-    .string()
-    .trim()
-    .min(3, { message: "New Password must be greater than 3 Charcters" })
-    .max(100, { message: "New Password must be Lower than 100 Charcters" }),
-  confirmPassword: z
-    .string()
-    .trim()
-    .min(3, { message: "Confirm Password must be greater than 3 Charcters" })
-    .max(100, { message: "Confirm Password must be Lower than 100 Charcters" }),
-}).refine((data) => data.confirmPassword === data.newPassword, {
-  error: 'Confirm Password and New Password Must Match',
-  path: ['confirmPassword']
+    .check(z.email())
 });

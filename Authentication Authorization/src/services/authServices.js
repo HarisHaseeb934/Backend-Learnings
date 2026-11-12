@@ -6,6 +6,7 @@ import { UrlShortener } from "../models/URLShortener.js";
 import { Session } from "../models/Session.js";
 import { EmailVerificationToken } from "../models/EmailVerificationToken.js";
 import mongoose from "mongoose";
+import { PasswordResetToken } from "../models/PasswordResetToken.js";
 
 export const checkEmailExits = async (email) => {
   return await User.findOne({ email: email });
@@ -67,19 +68,19 @@ export const refreshTokens = async (refreshToken) => {
       id: user._id,
       name: user.name,
       email: user.email,
-      isEmailValid: register.isEmailVerified,
+      isEmailValid: user.isEmailVerified,
       session: session._id,
     };
 
-    const accessToken = createAccessToken(userInfo);
-    const refreshToken = createRefreshToken({ sessionId: session._id });
+    const access_Token = createAccessToken(userInfo);
+    const refresh_Token = createRefreshToken({ sessionId: session._id });
 
-    session.refreshToken = refreshToken;
+    session.refreshToken = refresh_Token;
     await session.save();
 
     return {
-      accessToken,
-      refreshToken,
+      access_Token,
+      refresh_Token,
       user: userInfo,
     };
   } catch (error) {
@@ -102,7 +103,7 @@ export const generateRandomToken = (digit = 8) => {
 export const insertEmailVerfi = async (data) => {
   const session = await mongoose.startSession();
   try {
-    await session.withTransaction(async () => {
+    return await session.withTransaction(async () => {
       await EmailVerificationToken.deleteMany({ user: data.user });
       return await EmailVerificationToken.create([data], {
         session,
@@ -125,24 +126,55 @@ export const createVerifyEmailLink = ({ email, token }) => {
 };
 
 export const findVerificationEmailToken = async ({ token, email }) => {
-  const tokenObj = await EmailVerificationToken.findOne({ token }).populate('user');
+  const tokenObj = await EmailVerificationToken.findOne({ token }).populate(
+    "user",
+  );
   // if (!tokenObj) return null;
 
   // const user = await User.findById(tokenObj.user)
 
   if (!tokenObj || !tokenObj.user) return null;
-  console.log(tokenObj)
+  console.log(tokenObj);
   return {
     userId: tokenObj.user._id,
     email: tokenObj.user.email,
     token: tokenObj.token,
+  };
+};
+
+export const verifyUserEmailAndUpdate = async (userId) => {
+  return await User.findByIdAndUpdate(
+    userId,
+    { $set: { isEmailVerified: true } },
+    { new: true, runValidators: true },
+  );
+};
+
+export const clearVerifyEmailToken = async (userId) => {
+  return await EmailVerificationToken.deleteMany({ user: userId });
+};
+
+export const insertResetToken = async (data) => {
+  const session = await mongoose.startSession();
+  try {
+    return await session.withTransaction(async () => {
+      await PasswordResetToken.deleteMany({ user: data.user });
+      const prt = new PasswordResetToken(data);
+      return await prt.save({ session });
+    });
+  } catch (error) {
+    throw error;
+  } finally {
+    session.endSession();
   }
 };
 
-export const verifyUserEmailAndUpdate = async(userId) => {
-  return await User.findByIdAndUpdate(userId, {$set: {isEmailVerified: true}}, {new: true, runValidators: true})
-}
-
-export const clearVerifyEmailToken = async(userId) => {
-  return await EmailVerificationToken.deleteMany({user: userId})
-}
+export const createResetPasswordLink = async (id) => {
+  const randomToken = crypto.randomBytes(32).toString("hex");
+  const hashToken = crypto
+    .createHash("sha256")
+    .update(randomToken)
+    .digest("hex");
+  const insertToken = await insertResetToken({ user: id, token: hashToken });
+  return `${process.env.FORNTEND_URL}/reset-password/${insertToken.token}`;
+};

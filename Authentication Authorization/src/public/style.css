@@ -264,3 +264,27 @@ h1 {
   color: red;
   padding: 5px;
 }
+
+.reset-password{
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 1px 2px 5px 2px;
+  padding: 25px;
+  margin: 30px auto;
+  form{
+    display: flex;
+    flex-direction: column;
+    margin: 30px;
+    gap: 10px;
+    input{
+      padding: 5px 10px;
+      outline: none;
+    }
+    button{
+      padding: 8px;
+      background: #4c98dd;
+      color: white;
+      border: none;
+    }
+  }
+}

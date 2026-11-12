@@ -11,6 +11,7 @@ import {
   clearVerifyEmailToken,
   createAccessToken,
   createRefreshToken,
+  createResetPasswordLink,
   createSession,
   createUser,
   createVerifyEmailLink,
@@ -21,6 +22,7 @@ import {
 } from "../services/authServices.js";
 import {
   editProfileSchema,
+  emailSchema,
   loginUserSchema,
   registerUserSchema,
   verifyEmail,
@@ -264,37 +266,82 @@ export const getEditProfile = async (req, res, next) => {
 };
 
 export const getChangePasswordPage = (req, res, next) => {
-  if(!req.user) return res.redirect('/')
-  res.render('auth/changePassword', {errors: req.flash('errors'), singleError: req.flash('singleError')})
-}
+  if (!req.user) return res.redirect("/");
+  res.render("auth/changePassword", {
+    errors: req.flash("errors"),
+    singleError: req.flash("singleError"),
+  });
+};
 
-export const postChangePassword = async(req, res, next) => {
-  const result = verifyPasswords.safeParse(req.body)
-  if(!result.success){
+export const postChangePassword = async (req, res, next) => {
+  const result = verifyPasswords.safeParse(req.body);
+  if (!result.success) {
     // const errorObject = result.error.flatten().fieldErrors;
-    const errorObject = z.flattenError(result.error)
-    req.flash("errors", Object.entries(errorObject.fieldErrors))
-    return res.redirect('/change-password')
+    const errorObject = z.flattenError(result.error);
+    req.flash("errors", Object.entries(errorObject.fieldErrors));
+    return res.redirect("/change-password");
   }
 
   const user = await User.findById(req.user.id);
 
-  if(!user){
-    req.flash("errors", "Users id not Exists")
-    res.redirect('/')
+  if (!user) {
+    req.flash("errors", "Users id not Exists");
+    res.redirect("/");
   }
 
-  const isMatch = await user.comparePassword(result.data.currentPassword)
+  const isMatch = await user.comparePassword(result.data.currentPassword);
 
-  console.log(isMatch)
+  console.log(isMatch);
 
-  if(!isMatch){
-    req.flash("singleError", 'Enter Correct Password')
-    return res.redirect('/change-password')
+  if (!isMatch) {
+    req.flash("singleError", "Enter Correct Password");
+    return res.redirect("/change-password");
   }
 
-  user.password = result.data.newPassword
-  await user.save()
-  
-  res.redirect('/profile')
-}
+  user.password = result.data.newPassword;
+  await user.save();
+
+  res.redirect("/profile");
+};
+
+export const getResetPasswordPage = (req, res) => {
+  res.render("auth/resetPassword", {
+    errors: req.flash("errors"),
+    formSubmitted: req.flash("formSubmitted")[0],
+  });
+};
+
+export const postResetPassword = async (req, res) => {
+  const result = emailSchema.safeParse(req.body);
+  if (!result.success) {
+    const error = z.flattenError(result.error);
+    req.flash("errors", error.fieldErrors);
+    return res.redirect("/reset-password");
+  }
+
+  const user = await User.findOne({ email: result.data.registerEmail }).lean();
+
+  if (!user) {
+    req.flash("formSubmitted", true);
+    return res.redirect("/reset-password");
+  }
+
+  const resetPasswordLink = await createResetPasswordLink(user._id);
+
+  const mjmlTemplate = await fs.readFile(
+    path.join(import.meta.dirname, "..", "email", "password-reset-email.mjml"),
+    "utf-8",
+  );
+  const injectedEjs = ejs.render(mjmlTemplate, {
+    username: user.name,
+    link: resetPasswordLink,
+  });
+  const { html, error } = await mjml2html(injectedEjs);
+
+  console.log(html)
+
+  await sendMail({ to: user.email, subject: "Reset Password", html });
+
+  req.flash("formSubmitted", true);
+  return res.redirect("/reset-password");
+};
