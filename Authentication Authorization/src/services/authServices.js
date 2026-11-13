@@ -176,5 +176,5 @@ export const createResetPasswordLink = async (id) => {
     .update(randomToken)
     .digest("hex");
   const insertToken = await insertResetToken({ user: id, token: hashToken });
-  return `${process.env.FORNTEND_URL}/reset-password/${insertToken.token}`;
+  return `${process.env.FORNTEND_URL}/reset-password/${randomToken}`;
 };

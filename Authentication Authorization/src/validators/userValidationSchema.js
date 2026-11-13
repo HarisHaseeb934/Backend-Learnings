@@ -37,15 +37,8 @@ export const editProfileSchema = z.object({
   name: nameSchema,
 });
 
-export const verifyPasswords = z
+export const verifyChangePassword = z
   .object({
-    currentPassword: z
-      .string()
-      .trim()
-      .min(3, { message: "Current Password must be greater than 3 Charcters" })
-      .max(100, {
-        message: "Current Password must be Lower than 100 Charcters",
-      }),
     newPassword: z
       .string()
       .trim()
@@ -63,6 +56,16 @@ export const verifyPasswords = z
     error: "Confirm Password and New Password Must Match",
     path: ["confirmPassword"],
   });
+
+export const verifyPasswords = verifyChangePassword.extend({
+    currentPassword: z
+      .string()
+      .trim()
+      .min(3, { message: "Current Password must be greater than 3 Charcters" })
+      .max(100, {
+        message: "Current Password must be Lower than 100 Charcters",
+      }),
+  })
 
 export const emailSchema = z.object({
   registerEmail: z

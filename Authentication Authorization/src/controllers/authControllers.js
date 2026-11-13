@@ -25,12 +25,15 @@ import {
   emailSchema,
   loginUserSchema,
   registerUserSchema,
+  verifyChangePassword,
   verifyEmail,
   verifyPasswords,
 } from "../validators/userValidationSchema.js";
 import mjml2html from "mjml";
 import AppError from "../utilis/AppError.js";
 import z from "zod";
+import crypto from "crypto";
+import { PasswordResetToken } from "../models/PasswordResetToken.js";
 
 export const getLoginPage = async (req, res) => {
   res.render("auth/login", { errors: req.flash("error") });
@@ -38,13 +41,11 @@ export const getLoginPage = async (req, res) => {
 
 export const postLogin = async (req, res) => {
   const result = loginUserSchema.safeParse(req.body);
-
   if (!result.success) {
     const errorMessage = result.error.flatten().fieldErrors;
     req.flash("error", errorMessage);
     return res.redirect("/login");
   }
-
   const { email, password } = result.data;
   const userExists = await checkEmailExits(email);
   if (!userExists) {
@@ -56,14 +57,12 @@ export const postLogin = async (req, res) => {
     req.flash("error", "User or Password is invalid");
     return res.redirect("/login");
   }
-
   const session = await createSession({
     user: userExists._id,
     refreshToken: "temp",
     userAgent: req.header("user-agent"),
     ipAddress: req.ip,
   });
-
   const accessToken = createAccessToken({
     id: userExists._id,
     name: userExists.name,
@@ -72,12 +71,9 @@ export const postLogin = async (req, res) => {
     sessionId: session._id,
   });
   const refreshToken = createRefreshToken({ sessionId: session._id });
-
   session.refreshToken = refreshToken;
   await session.save();
-
   const baseConfig = { httpOnly: true, secure: true };
-
   res.cookie("access_token", accessToken, {
     ...baseConfig,
     maxAge: 15 * 60 * 1000,
@@ -86,7 +82,6 @@ export const postLogin = async (req, res) => {
     ...baseConfig,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
-
   res.redirect("/");
 };
 
@@ -102,7 +97,6 @@ export const postRegister = async (req, res) => {
     req.flash("error", errorMessageObj);
     return res.redirect("/register");
   }
-
   const { name, email, password } = result.data;
   const userExits = await checkEmailExits(email);
   if (userExits) {
@@ -110,14 +104,12 @@ export const postRegister = async (req, res) => {
     return res.redirect("/register");
   }
   const register = await createUser({ name, email, password });
-
   const session = await createSession({
     user: register._id,
     refreshToken: "temp",
     userAgent: req.header("user-agent"),
     ipAddress: req.ip,
   });
-
   const accessToken = createAccessToken({
     id: register._id,
     name: register.name,
@@ -125,14 +117,10 @@ export const postRegister = async (req, res) => {
     isEmailValid: register.isEmailVerified,
     sessionId: session._id,
   });
-
   const refreshToken = createRefreshToken({ sessionId: session._id });
-
   session.refreshToken = refreshToken;
   await session.save();
-
   const baseConfig = { httpOnly: true, secure: true };
-
   res.cookie("access_token", accessToken, {
     ...baseConfig,
     maxAge: 15 * 60 * 1000,
@@ -141,7 +129,6 @@ export const postRegister = async (req, res) => {
     ...baseConfig,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
-
   res.redirect("/");
 };
 
@@ -152,21 +139,16 @@ export const getMe = (req, res) => {
 
 export const logout = async (req, res) => {
   await clearSession(req.user.sessionId);
-
   res.clearCookie("access_token");
   res.clearCookie("refresh_token");
-
   return res.redirect("/login");
 };
 
 export const getProfilePage = async (req, res) => {
   if (!req.user) res.redirect("/login");
-
   const user = await User.findById(req.user.id);
   if (!user) res.redirect("/login");
-
   const shortLinks = await UrlShortener.find({ user: user._id });
-
   res.render("auth/profile", {
     user: {
       id: user._id,
@@ -189,33 +171,26 @@ export const getVerifyEmailPage = (req, res) => {
 
 export const resendVerificationLink = async (req, res) => {
   if (!req.user) return res.redirect("/");
-
   const randomToken = generateRandomToken();
-
   await insertEmailVerfi({
     user: req.user.id,
     token: randomToken,
   });
-
   const link = createVerifyEmailLink({
     email: req.user.email,
     token: randomToken,
   });
-
   const mjmlTemplate = await fs.readFile(
     path.join(import.meta.dirname, "..", "email", "verify-email.mjml"),
     "utf-8",
   );
   const ejsRender = ejs.render(mjmlTemplate, { token: randomToken, link });
-
   const { html } = await mjml2html(ejsRender);
-
   await sendMail({
     to: req.user.email,
     subject: "Verify Your Email",
     html,
   });
-
   res.redirect("/resend-verification");
 };
 
@@ -226,15 +201,10 @@ export const verifyEmailToken = async (req, res) => {
     req.flash("error", errorObject);
     return res.redirect("/resend-verification");
   }
-
   const token = await findVerificationEmailToken(result.data);
-
   if (!token) return res.send("Verification link is invalid or expired");
-
   await verifyUserEmailAndUpdate(token.userId);
-
   await clearVerifyEmailToken(token.userId);
-
   res.redirect("/profile");
 };
 
@@ -255,7 +225,6 @@ export const getEditProfile = async (req, res, next) => {
     console.log(errorObject);
     return res.redirect("/edit-profile");
   }
-
   const user = await User.findByIdAndUpdate(
     req.user.id,
     { $set: { name: result.data.name } },
@@ -281,29 +250,21 @@ export const postChangePassword = async (req, res, next) => {
     req.flash("errors", Object.entries(errorObject.fieldErrors));
     return res.redirect("/change-password");
   }
-
   const user = await User.findById(req.user.id);
-
   if (!user) {
     req.flash("errors", "Users id not Exists");
     res.redirect("/");
   }
-
   const isMatch = await user.comparePassword(result.data.currentPassword);
-
   console.log(isMatch);
-
   if (!isMatch) {
     req.flash("singleError", "Enter Correct Password");
     return res.redirect("/change-password");
   }
-
   user.password = result.data.newPassword;
   await user.save();
-
   res.redirect("/profile");
 };
-
 export const getResetPasswordPage = (req, res) => {
   res.render("auth/resetPassword", {
     errors: req.flash("errors"),
@@ -318,16 +279,12 @@ export const postResetPassword = async (req, res) => {
     req.flash("errors", error.fieldErrors);
     return res.redirect("/reset-password");
   }
-
   const user = await User.findOne({ email: result.data.registerEmail }).lean();
-
   if (!user) {
     req.flash("formSubmitted", true);
     return res.redirect("/reset-password");
   }
-
   const resetPasswordLink = await createResetPasswordLink(user._id);
-
   const mjmlTemplate = await fs.readFile(
     path.join(import.meta.dirname, "..", "email", "password-reset-email.mjml"),
     "utf-8",
@@ -337,11 +294,45 @@ export const postResetPassword = async (req, res) => {
     link: resetPasswordLink,
   });
   const { html, error } = await mjml2html(injectedEjs);
-
-  console.log(html)
-
   await sendMail({ to: user.email, subject: "Reset Password", html });
-
   req.flash("formSubmitted", true);
   return res.redirect("/reset-password");
+};
+
+export const getResetPasswordTokenPage = async (req, res) => {
+  const { token } = req.params;
+  const hashToken = crypto.createHash("sha256").update(token).digest("hex");
+  const isTokenExist = await PasswordResetToken.findOne({ token: hashToken });
+  if (!isTokenExist) {
+    return res.render("auth/invalid-password");
+  }
+  return res.render("auth/reset-password", {
+    errors: req.flash("errors"),
+    singleError: req.flash("singleError"),
+    token,
+  });
+};
+
+export const postResetPasswordTokenPage = async (req, res) => {
+  const { token } = req.params;
+  const hashToken = crypto.createHash("sha256").update(token).digest("hex");
+  const isTokenExist = await PasswordResetToken.findOne({ token: hashToken });
+  if (!isTokenExist) {
+    return res.render("auth/invalid-password");
+  }
+  const result = verifyChangePassword.safeParse(req.body);
+  if (!result.success) {
+    const error = z.flattenError(result.error);
+    req.flash("errors", Object.entries(error.fieldErrors));
+    return res.redirect(`/reset-password/${token}`);
+  }
+  const user = await User.findById(isTokenExist.user);
+  if (!user) {
+    req.flash("errors", "User not Exists");
+    return res.redirect("/register");
+  }
+  user.password = result.data.newPassword;
+  await user.save();
+  await PasswordResetToken.deleteMany({ user: user._id });
+  res.redirect("/");
 };
