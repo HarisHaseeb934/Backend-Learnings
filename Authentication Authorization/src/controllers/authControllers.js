@@ -367,7 +367,6 @@ export const getGoogleLoginPage = async (req, res) => {
 
   const cookieConfig = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
     maxAge: OAUTH_EXCHANGE_EXPIRY,
     sameSite: "lax",
   };
@@ -378,12 +377,17 @@ export const getGoogleLoginPage = async (req, res) => {
 
 export const getGoogleCallback = async (req, res) => {
   const { code, state } = req.query;
-  const storedState = req.cookies.google_auth_state;
-
+  const storedState = req.cookies.google_oauth_state;
+  console.log("1 running")
+  console.log(code)
+  console.log(state)
+  console.log(storedState)
   if (!state || !code || !storedState || state !== storedState) {
     req.flash("erros", "Invalid Google login attempt. Please try again!");
     return res.redirect("/login");
   }
+
+console.log("2 running")
 
   let user;
 
@@ -399,12 +403,12 @@ export const getGoogleCallback = async (req, res) => {
         grant_type: "authorization_code",
       }),
     });
-
+console.log("3 running")
     const token = await tokenRes.json();
     if (!token || !token.access_token) {
       throw new Error("Failed to fetch tokens from Google");
     }
-
+console.log("4 running")
     const userRes = await fetch(
       `https://www.googleapis.com/oauth2/v1/userinfo?alt=json`,
       {
@@ -415,7 +419,7 @@ export const getGoogleCallback = async (req, res) => {
     const googleUser = await userRes.json();
     const { id: googleUserId, name, email, picture } = googleUser;
     user = await getUserWithOAuthId("google", email);
-
+console.log("5 running")
     if (user) {
       if (!user.providerAccountId) {
         await linkUserWithOAuth({
@@ -423,6 +427,7 @@ export const getGoogleCallback = async (req, res) => {
           provider: "google",
           providerAccountId: googleUserId,
         });
+        console.log("6 running")
       }
     } else {
       user = await createUserWithOauth({
@@ -434,6 +439,7 @@ export const getGoogleCallback = async (req, res) => {
       });
     }
   } catch (error) {
+    console.log("7 running")
     console.log(error.message);
     req.flash("errors", "Authentication failed. Please try again.");
     return res.redirect("/login");
