@@ -7,6 +7,7 @@ import { Session } from "../models/Session.js";
 import { EmailVerificationToken } from "../models/EmailVerificationToken.js";
 import mongoose from "mongoose";
 import { PasswordResetToken } from "../models/PasswordResetToken.js";
+import { Oauth } from "../models/OAuth.js";
 
 export const checkEmailExits = async (email) => {
   return await User.findOne({ email: email });
@@ -129,9 +130,6 @@ export const findVerificationEmailToken = async ({ token, email }) => {
   const tokenObj = await EmailVerificationToken.findOne({ token }).populate(
     "user",
   );
-  // if (!tokenObj) return null;
-
-  // const user = await User.findById(tokenObj.user)
 
   if (!tokenObj || !tokenObj.user) return null;
   console.log(tokenObj);
@@ -177,4 +175,56 @@ export const createResetPasswordLink = async (id) => {
     .digest("hex");
   const insertToken = await insertResetToken({ user: id, token: hashToken });
   return `${process.env.FORNTEND_URL}/reset-password/${randomToken}`;
+};
+
+export const getUserWithOAuthId = async (provider, email) => {
+  const user = await User.findOne({ email }).lean();
+  if (!user) return null;
+
+  const oauth = await Oauth.findOne({ user: user._id, provider });
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    isEmailVerified: user.isEmailVerified,
+    provider: oauth ? oauth.provider : null,
+    providerAccountId: oauth ? oauth.providerAccountId : null,
+  };
+};
+
+export const linkUserWithOAuth = async (data) => {
+  await Oauth.create(data);
+};
+
+export const createUserWithOauth = async ({
+  name,
+  email,
+  isEmailVerified,
+  provider,
+  providerAccountId,
+}) => {
+  const session = await mongoose.startSession();
+  try {
+    return await session.withTransaction(async () => {
+      const [user] = await User.create([{ name, email, isEmailVerified }], {
+        session,
+      });
+      const [oauth] = await Oauth.create(
+        [{ user: user._id, provider, providerAccountId }],
+        { session },
+      );
+      return {
+        id: user._id,
+        name,
+        email,
+        isEmailValid: true,
+        provider,
+        providerAccountId,
+      };
+    });
+  } catch (error) {
+    throw error;
+  } finally {
+    session.endSession();
+  }
 };

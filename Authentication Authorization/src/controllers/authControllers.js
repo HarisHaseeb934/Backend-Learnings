@@ -14,10 +14,14 @@ import {
   createResetPasswordLink,
   createSession,
   createUser,
+  createUserWithOauth,
   createVerifyEmailLink,
   findVerificationEmailToken,
   generateRandomToken,
+  getUserWithOAuthId,
   insertEmailVerfi,
+  linkUserWithOAuth,
+  refreshTokens,
   verifyUserEmailAndUpdate,
 } from "../services/authServices.js";
 import {
@@ -34,6 +38,10 @@ import AppError from "../utilis/AppError.js";
 import z from "zod";
 import crypto from "crypto";
 import { PasswordResetToken } from "../models/PasswordResetToken.js";
+import {
+  GOOGLE_REDIRECT_URI,
+  OAUTH_EXCHANGE_EXPIRY,
+} from "../constants/oauthConstant.js";
 
 export const getLoginPage = async (req, res) => {
   res.render("auth/login", { errors: req.flash("error") });
@@ -51,6 +59,10 @@ export const postLogin = async (req, res) => {
   if (!userExists) {
     req.flash("error", "User Not Exists");
     return res.redirect("/register");
+  }
+  if (!userExists.password) {
+    req.flash("error", "Login with Social Account");
+    return res.redirect("/login");
   }
   const isCorrectPassword = await userExists.comparePassword(password);
   if (!isCorrectPassword) {
@@ -334,5 +346,123 @@ export const postResetPasswordTokenPage = async (req, res) => {
   user.password = result.data.newPassword;
   await user.save();
   await PasswordResetToken.deleteMany({ user: user._id });
+  res.redirect("/");
+};
+
+export const getGoogleLoginPage = async (req, res) => {
+  if (req.user) return res.redirect("/");
+
+  const state = crypto.randomBytes(32).toString("hex");
+  const rootURL = "https://accounts.google.com/o/oauth2/v2/auth";
+  const options = {
+    redirect_uri: GOOGLE_REDIRECT_URI,
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    response_type: "code",
+    scope: ["openid", "profile", "email"].join(" "),
+    state,
+    prompt: "consent",
+  };
+
+  const qs = new URLSearchParams(options);
+
+  const cookieConfig = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: OAUTH_EXCHANGE_EXPIRY,
+    sameSite: "lax",
+  };
+
+  res.cookie("google_oauth_state", state, cookieConfig);
+  res.redirect(`${rootURL}?${qs.toString()}`);
+};
+
+export const getGoogleCallback = async (req, res) => {
+  const { code, state } = req.query;
+  const storedState = req.cookies.google_auth_state;
+
+  if (!state || !code || !storedState || state !== storedState) {
+    req.flash("erros", "Invalid Google login attempt. Please try again!");
+    return res.redirect("/login");
+  }
+
+  let user;
+
+  try {
+    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code,
+        redirect_uri: GOOGLE_REDIRECT_URI,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        grant_type: "authorization_code",
+      }),
+    });
+
+    const token = await tokenRes.json();
+    if (!token || !token.access_token) {
+      throw new Error("Failed to fetch tokens from Google");
+    }
+
+    const userRes = await fetch(
+      `https://www.googleapis.com/oauth2/v1/userinfo?alt=json`,
+      {
+        headers: { Authorization: `Bearer ${token.access_token}` },
+      },
+    );
+
+    const googleUser = await userRes.json();
+    const { id: googleUserId, name, email, picture } = googleUser;
+    user = await getUserWithOAuthId("google", email);
+
+    if (user) {
+      if (!user.providerAccountId) {
+        await linkUserWithOAuth({
+          user: user.id,
+          provider: "google",
+          providerAccountId: googleUserId,
+        });
+      }
+    } else {
+      user = await createUserWithOauth({
+        name,
+        email,
+        provider: "google",
+        isEmailVerified: true,
+        providerAccountId: googleUserId,
+      });
+    }
+  } catch (error) {
+    console.log(error.message);
+    req.flash("errors", "Authentication failed. Please try again.");
+    return res.redirect("/login");
+  }
+
+  const session = await createSession({
+    user: user.id,
+    refreshToken: "temp",
+    userAgent: req.header("user-agent"),
+    ipAddress: req.ip,
+  });
+  const accessToken = createAccessToken({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    isEmailValid: user.isEmailVerified,
+    sessionId: session._id,
+  });
+  const refreshToken = createRefreshToken({ sessionId: session._id });
+  session.refreshToken = refreshToken;
+  await session.save();
+  const baseConfig = { httpOnly: true, secure: true };
+  res.cookie("access_token", accessToken, {
+    ...baseConfig,
+    maxAge: 15 * 60 * 1000,
+  });
+  res.cookie("refresh_token", refreshToken, {
+    ...baseConfig,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
   res.redirect("/");
 };

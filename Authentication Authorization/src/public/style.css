@@ -296,3 +296,21 @@ h1 {
   padding: 25px;
   margin: 30px auto;
 }
+
+.divider{
+  text-align: center;
+  margin: 15px;
+}
+
+.auth{
+  margin: 15px auto;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  a{
+    color: black;
+  }
+  a i{
+    font-size: 20px;
+  }
+}

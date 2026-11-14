@@ -3,6 +3,7 @@ import argon2 from "argon2";
 import { Session } from "./Session.js";
 import { EmailVerificationToken } from "./EmailVerificationToken.js";
 import { PasswordResetToken } from "./PasswordResetToken.js";
+import { Oauth } from "./OAuth.js";
 
 const userSchema = mongoose.Schema(
   {
@@ -20,7 +21,6 @@ const userSchema = mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
       trim: true,
     },
     isEmailVerified: {
@@ -46,6 +46,7 @@ userSchema.pre("findOneAndDelete", async function () {
     await Session.deleteMany({ user: id });
     await EmailVerificationToken.deleteMany({ user: id });
     await PasswordResetToken.deleteMany({ user: id });
+    await Oauth.deleteMany({user: id});
   }
 });
 

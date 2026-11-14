@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getChangePasswordPage, getEditProfile, getEditProfilePage, getLoginPage, getMe, getProfilePage, getRegistrationPage, getResetPasswordPage, getResetPasswordTokenPage, getVerifyEmailPage, logout, postChangePassword, postLogin, postRegister, postResetPassword, postResetPasswordTokenPage, resendVerificationLink, verifyEmailToken } from '../controllers/authControllers.js'
+import { getChangePasswordPage, getEditProfile, getEditProfilePage, getGoogleCallback, getGoogleLoginPage, getLoginPage, getMe, getProfilePage, getRegistrationPage, getResetPasswordPage, getResetPasswordTokenPage, getVerifyEmailPage, logout, postChangePassword, postLogin, postRegister, postResetPassword, postResetPasswordTokenPage, resendVerificationLink, verifyEmailToken } from '../controllers/authControllers.js'
 
 const router = Router()
 
@@ -28,5 +28,9 @@ router.route('/change-password').get(getChangePasswordPage).post(postChangePassw
 router.route('/reset-password').get(getResetPasswordPage).post(postResetPassword)
 
 router.route('/reset-password/:token').get(getResetPasswordTokenPage).post(postResetPasswordTokenPage)
+
+router.route('/google').get(getGoogleLoginPage)
+
+router.route('/google/callback').get(getGoogleCallback)
 
 export default router
