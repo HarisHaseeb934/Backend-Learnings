@@ -33,4 +33,4 @@ router.route('/google').get(getGoogleLoginPage)
 
 router.route('/google/callback').get(getGoogleCallback)
 
-export default router
+export default router;

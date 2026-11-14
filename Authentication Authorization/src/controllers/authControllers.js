@@ -357,20 +357,18 @@ export const getGoogleLoginPage = async (req, res) => {
   const options = {
     redirect_uri: GOOGLE_REDIRECT_URI,
     client_id: process.env.GOOGLE_CLIENT_ID,
+    access_type: "offline",
     response_type: "code",
+    prompt: "consent",
     scope: ["openid", "profile", "email"].join(" "),
     state,
-    prompt: "consent",
   };
-
   const qs = new URLSearchParams(options);
-
   const cookieConfig = {
     httpOnly: true,
     maxAge: OAUTH_EXCHANGE_EXPIRY,
     sameSite: "lax",
   };
-
   res.cookie("google_oauth_state", state, cookieConfig);
   res.redirect(`${rootURL}?${qs.toString()}`);
 };
@@ -378,48 +376,45 @@ export const getGoogleLoginPage = async (req, res) => {
 export const getGoogleCallback = async (req, res) => {
   const { code, state } = req.query;
   const storedState = req.cookies.google_oauth_state;
-  console.log("1 running")
-  console.log(code)
-  console.log(state)
-  console.log(storedState)
-  if (!state || !code || !storedState || state !== storedState) {
-    req.flash("erros", "Invalid Google login attempt. Please try again!");
-    return res.redirect("/login");
+
+  if (!code || !state || !storedState || state !== storedState) {
+    req.flash("errors", "Invalid Google Login attempt, Please Try again!");
+    return res.redirect("/");
   }
-
-console.log("2 running")
-
-  let user;
-
   try {
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         code,
-        redirect_uri: GOOGLE_REDIRECT_URI,
         client_id: process.env.GOOGLE_CLIENT_ID,
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: GOOGLE_REDIRECT_URI,
         grant_type: "authorization_code",
       }),
     });
-console.log("3 running")
+
     const token = await tokenRes.json();
-    if (!token || !token.access_token) {
-      throw new Error("Failed to fetch tokens from Google");
+    if (!tokenRes.ok || !token.access_token) {
+      throw new Error("Failed to Fetch Token From Google");
     }
-console.log("4 running")
+
+
     const userRes = await fetch(
-      `https://www.googleapis.com/oauth2/v1/userinfo?alt=json`,
+      "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
       {
         headers: { Authorization: `Bearer ${token.access_token}` },
       },
     );
 
     const googleUser = await userRes.json();
-    const { id: googleUserId, name, email, picture } = googleUser;
-    user = await getUserWithOAuthId("google", email);
-console.log("5 running")
+    const { id: googleUserId, name, email } = googleUser;
+
+    let user = await getUserWithOAuthId({
+      provider: "google",
+      email,
+    });
+
     if (user) {
       if (!user.providerAccountId) {
         await linkUserWithOAuth({
@@ -427,48 +422,40 @@ console.log("5 running")
           provider: "google",
           providerAccountId: googleUserId,
         });
-        console.log("6 running")
       }
     } else {
-      user = await createUserWithOauth({
-        name,
-        email,
-        provider: "google",
-        isEmailVerified: true,
-        providerAccountId: googleUserId,
-      });
+      user = await createUserWithOauth({ name, email, googleUserId });
     }
-  } catch (error) {
-    console.log("7 running")
-    console.log(error.message);
-    req.flash("errors", "Authentication failed. Please try again.");
-    return res.redirect("/login");
-  }
 
-  const session = await createSession({
-    user: user.id,
-    refreshToken: "temp",
-    userAgent: req.header("user-agent"),
-    ipAddress: req.ip,
-  });
-  const accessToken = createAccessToken({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    isEmailValid: user.isEmailVerified,
-    sessionId: session._id,
-  });
-  const refreshToken = createRefreshToken({ sessionId: session._id });
-  session.refreshToken = refreshToken;
-  await session.save();
-  const baseConfig = { httpOnly: true, secure: true };
-  res.cookie("access_token", accessToken, {
-    ...baseConfig,
-    maxAge: 15 * 60 * 1000,
-  });
-  res.cookie("refresh_token", refreshToken, {
-    ...baseConfig,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
-  res.redirect("/");
+    const session = await createSession({
+      user: user.id,
+      refreshToken: "temp",
+      userAgent: req.header("user-agent"),
+      ipAddress: req.ip,
+    });
+    const accessToken = createAccessToken({ ...user, sessionId: session._id });
+    const refreshToken = createRefreshToken({ sessionId: session._id });
+    session.refreshToken = refreshToken;
+    await session.save();
+
+    const baseConfig = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    res.cookie("access_token", accessToken, {
+      ...baseConfig,
+      maxAge: 15 * 60 * 1000,
+    });
+    res.cookie("refresh_token", refreshToken, {
+      ...baseConfig,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.redirect("/");
+  } catch (error) {
+    console.error("Google OAuth Error:", error);
+    req.flash("errors", "Authentication failed. Please try again.");
+    res.redirect("/login");
+  }
 };

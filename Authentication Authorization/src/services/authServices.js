@@ -177,10 +177,9 @@ export const createResetPasswordLink = async (id) => {
   return `${process.env.FORNTEND_URL}/reset-password/${randomToken}`;
 };
 
-export const getUserWithOAuthId = async (provider, email) => {
+export const getUserWithOAuthId = async ({ provider, email }) => {
   const user = await User.findOne({ email }).lean();
   if (!user) return null;
-
   const oauth = await Oauth.findOne({ user: user._id, provider });
   return {
     id: user._id,
@@ -199,27 +198,33 @@ export const linkUserWithOAuth = async (data) => {
 export const createUserWithOauth = async ({
   name,
   email,
-  isEmailVerified,
-  provider,
-  providerAccountId,
+  googleUserId,
+  isEmailVerified = true,
+  provider = "google",
 }) => {
   const session = await mongoose.startSession();
   try {
     return await session.withTransaction(async () => {
       const [user] = await User.create([{ name, email, isEmailVerified }], {
         session,
-      });
+      }).lean();
       const [oauth] = await Oauth.create(
-        [{ user: user._id, provider, providerAccountId }],
+        [
+          {
+            user: user._id,
+            provider,
+            providerAccountId: googleUserId,
+          },
+        ],
         { session },
       );
       return {
         id: user._id,
-        name,
-        email,
-        isEmailValid: true,
-        provider,
-        providerAccountId,
+        name: user.name,
+        email: user.email,
+        isEmailValid: user.isEmailValid,
+        provider: oauth.provider,
+        providerAccountId: oauth.providerAccountId,
       };
     });
   } catch (error) {
