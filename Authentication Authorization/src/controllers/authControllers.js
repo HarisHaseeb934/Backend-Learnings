@@ -110,6 +110,10 @@ export const postRegister = async (req, res) => {
     return res.redirect("/register");
   }
   const { name, email, password } = result.data;
+  if (!password) {
+    req.flash("error", "Please Enter Password");
+    return res.redirect("/register");
+  }
   const userExits = await checkEmailExits(email);
   if (userExits) {
     req.flash("error", "User already exists");
