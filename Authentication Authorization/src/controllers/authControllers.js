@@ -39,6 +39,7 @@ import z from "zod";
 import crypto from "crypto";
 import { PasswordResetToken } from "../models/PasswordResetToken.js";
 import {
+  GITHUB_REDIRECT_URI,
   GOOGLE_REDIRECT_URI,
   OAUTH_EXCHANGE_EXPIRY,
 } from "../constants/oauthConstant.js";
@@ -403,7 +404,6 @@ export const getGoogleCallback = async (req, res) => {
       throw new Error("Failed to Fetch Token From Google");
     }
 
-
     const userRes = await fetch(
       "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
       {
@@ -428,7 +428,13 @@ export const getGoogleCallback = async (req, res) => {
         });
       }
     } else {
-      user = await createUserWithOauth({ name, email, googleUserId });
+      user = await createUserWithOauth({
+        name,
+        email,
+        googleUserId,
+        isEmailVerified: true,
+        provider: "google",
+      });
     }
 
     const session = await createSession({
@@ -460,6 +466,153 @@ export const getGoogleCallback = async (req, res) => {
   } catch (error) {
     console.error("Google OAuth Error:", error);
     req.flash("errors", "Authentication failed. Please try again.");
+    res.redirect("/login");
+  }
+};
+
+export const getGithubLoginPage = async (req, res) => {
+  if (req.user) return res.redirect("/");
+
+  const state = crypto.randomBytes(32).toString("hex");
+
+  const rootUrl = "https://github.com/login/oauth/authorize";
+
+  const options = {
+    client_id: process.env.GITHUB_CLIENT_ID,
+    redirect_uri: GITHUB_REDIRECT_URI,
+    scope: "user:email",
+    state,
+  };
+
+  const qs = new URLSearchParams(options);
+  const cookieConfig = {
+    httpOnly: true,
+    maxAge: OAUTH_EXCHANGE_EXPIRY,
+    sameSite: "lax",
+  };
+
+  res.cookie("github_oauth_state", state, cookieConfig);
+  res.redirect(`${rootUrl}?${qs.toString()}`);
+};
+
+export const getGithubCallback = async (req, res) => {
+  const { state, code } = req.query;
+
+  const storedState = req.cookies.github_oauth_state;
+  if (!state || !code || !storedState || storedState !== state) {
+    req.flash("errors", "Invalid Github Login attempt, Please Try again!");
+    req.redirect("/login");
+  }
+
+  try {
+    const tokenRes = await fetch(
+      "https://github.com/login/oauth/access_token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          code,
+          redirect_uri: GITHUB_REDIRECT_URI,
+          client_id: process.env.GITHUB_CLIENT_ID,
+          client_secret: process.env.GITHUB_CLIENT_SECRET,
+        }),
+      },
+    );
+
+    const token = await tokenRes.json();
+
+    if (!token.access_token || !tokenRes.ok) {
+      throw new Error("Failed to Fetch Token From Google");
+    }
+
+    const userRes = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${token.access_token}`,
+        "User-Agent": "NodeJS-App",
+      },
+    });
+
+    let githubUser = await userRes.json();
+    let githubUserId = String(githubUser.id);
+    let githubUserName = githubUser.name || githubUser.login;
+    let githubUserEmail = githubUser.email;
+
+    if (!githubUserEmail) {
+      const emailRes = await fetch("https://api.github.com/user/emails", {
+        headers: {
+          Authorization: `Bearer ${token.access_token}`,
+          "User-Agent": "NodeJS-App",
+        },
+      });
+      
+      const emails = await emailRes.json();
+      
+      const primaryEmail = emails.find((e) => e.primary && e.verified);
+      githubUserEmail = primaryEmail ? primaryEmail.email : emails[0]?.email;
+    }
+   
+    if (!githubUserEmail) {
+      throw new Error(
+        "Could not retrieve a verified email address from GitHub.",
+      );
+    }
+    
+    let user = await getUserWithOAuthId({
+      email: githubUserEmail,
+      provider: "github",
+    });
+    if (user) {
+      if (!user.providerAccountId) {
+        await linkUserWithOAuth({
+          user: user.id,
+          provider: "github",
+          providerAccountId: githubUserId,
+        });
+        user.providerAccountId = githubUserId;
+      }
+    } else {
+      user = await createUserWithOauth({
+        name: githubUserName,
+        email: githubUserEmail,
+        isEmailVerified: true,
+        provider: "github",
+        providerAccountId: githubUserId,
+      });
+    }
+
+    const session = await createSession({
+      user: user.id,
+      refreshToken: "temp",
+      userAgent: req.header("user-agent"),
+      ipAddress: req.ip,
+    });
+
+    const access_token = createAccessToken({
+      ...user,
+      sessionId: session._id,
+    });
+
+    const refresh_token = createRefreshToken({ sessionId: session._id });
+
+    const baseConfig = {
+      httpOnly: true,
+      secure: true,
+    };
+    res.cookie("access_token", access_token, {
+      ...baseConfig,
+      maxAge: 15 * 60 * 1000,
+    });
+    res.cookie("refresh_token", refresh_token, {
+      ...baseConfig,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.redirect("/");
+  } catch (error) {
+    req.flash("errors", "Authentication failed please tryagain");
     res.redirect("/login");
   }
 };

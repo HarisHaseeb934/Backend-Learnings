@@ -199,8 +199,8 @@ export const createUserWithOauth = async ({
   name,
   email,
   googleUserId,
-  isEmailVerified = true,
-  provider = "google",
+  isEmailVerified,
+  provider,
 }) => {
   const session = await mongoose.startSession();
   try {
