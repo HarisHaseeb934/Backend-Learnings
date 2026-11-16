@@ -58,18 +58,26 @@ export const verifyChangePassword = z
   });
 
 export const verifyPasswords = verifyChangePassword.extend({
-    currentPassword: z
-      .string()
-      .trim()
-      .min(3, { message: "Current Password must be greater than 3 Charcters" })
-      .max(100, {
-        message: "Current Password must be Lower than 100 Charcters",
-      }),
-  })
-
-export const emailSchema = z.object({
-  registerEmail: z
+  currentPassword: z
     .string()
     .trim()
-    .check(z.email())
+    .min(3, { message: "Current Password must be greater than 3 Charcters" })
+    .max(100, {
+      message: "Current Password must be Lower than 100 Charcters",
+    }),
+});
+
+export const emailSchema = z.object({
+  registerEmail: z.string().trim().check(z.email()),
+});
+
+export const pageSchema = z.object({
+  page: z.coerce
+    .number()
+    .int()
+    .positive()
+    .min(1)
+    .optional()
+    .default(1)
+    .catch(1),
 });

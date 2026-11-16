@@ -185,13 +185,18 @@ export const getUserWithOAuthId = async ({ provider, email }) => {
     id: user._id,
     name: user.name,
     email: user.email,
+    avatarUrl: user.avatarUrl ? user.avatarUrl : null,
     isEmailVerified: user.isEmailVerified,
     provider: oauth ? oauth.provider : null,
     providerAccountId: oauth ? oauth.providerAccountId : null,
   };
 };
 
-export const linkUserWithOAuth = async (data) => {
+export const linkUserWithOAuth = async (id, avatarUrl, data) => {
+  await User.findOneAndUpdate(
+    { _id: id, avatarURL: { $in: [null, ""] } },
+    { avatarUrl },
+  );
   await Oauth.create(data);
 };
 
@@ -200,14 +205,18 @@ export const createUserWithOauth = async ({
   email,
   googleUserId,
   isEmailVerified,
+  avatarUrl,
   provider,
 }) => {
   const session = await mongoose.startSession();
   try {
     return await session.withTransaction(async () => {
-      const [user] = await User.create([{ name, email, isEmailVerified }], {
-        session,
-      }).lean();
+      const [user] = await User.create(
+        [{ name, email, isEmailVerified, avatarUrl }],
+        {
+          session,
+        },
+      ).lean();
       const [oauth] = await Oauth.create(
         [
           {
@@ -223,6 +232,7 @@ export const createUserWithOauth = async ({
         name: user.name,
         email: user.email,
         isEmailValid: user.isEmailValid,
+        avatarUrl: user.avatarURL,
         provider: oauth.provider,
         providerAccountId: oauth.providerAccountId,
       };
@@ -233,3 +243,28 @@ export const createUserWithOauth = async ({
     session.endSession();
   }
 };
+
+export const getShortLinks = async ({ user, limit = 10, page = 1 }) => {
+  const skip = (page - 1) * limit;
+  const shortLinks = await UrlShortener.find({ user })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .skip(skip)
+    .lean();
+  const totalCount = await UrlShortener.countDocuments({ user });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    shortLinks,
+    currentPage: page,
+    totalPages,
+  };
+};
+
+export const createPagination = (page, totalPages) => {
+  if(totalPages <= 5) return Array.from({length: totalPages}, (_, i) => i + 1);
+  const pages = new Set([1, page - 1, page, page + 1, totalPages]);
+  const sortedPages = [...pages].filter((p) => p >=1 && p <= totalPages).sort((a,b) => a - b);
+  return sortedPages.flatMap((p, i) => (i && p - sortedPages[i - 1] > 1 ? ['...', p]: [p]))
+}

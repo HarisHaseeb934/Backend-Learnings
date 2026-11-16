@@ -4,7 +4,13 @@
   <h1>Your Profile</h1>
   <div class="profile-card">
     <div class="profile-detail">
-      <div class="letter"><%= user.name.charAt(0).toUpperCase() %></div>
+      <% if(user.avatarUrl){ %>
+        <div class="image">
+          <img src="<%= user.avatarUrl %>" alt="">
+        </div>
+      <% }else{ %>
+        <div class="letter"><%= user.name.charAt(0).toUpperCase() %></div>
+      <% } %>
       <div class="details">
         <p><%= user.name.toUpperCase() %></p>
         <p><%= user.email %></p>
@@ -38,7 +44,11 @@
 
 <div class="edit-container">
   <a href="/edit-profile">Edit Profile</a>
-  <a href="/change-password">Change Password</a>
+  <% if(user.hasPassword){ %>
+    <a href="/change-password">Change Password</a>
+  <% }else{ %>
+    <a href="/set-password">Set Password</a>
+    <% } %>
 </div>
 
 <%- include('../partials/footer') %>

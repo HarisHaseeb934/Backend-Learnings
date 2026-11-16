@@ -224,32 +224,31 @@ h1 {
   }
 }
 
-.changePass{
+.changePass {
   width: 100%;
   max-width: 500px;
   box-shadow: 1px 2px 5px 2px;
   padding: 25px;
   margin: 30px auto;
-  form{
+  form {
     display: flex;
     flex-direction: column;
     margin: 30px;
     gap: 10px;
-    input{
+    input {
       padding: 5px 10px;
       outline: none;
     }
-    div{
+    div {
       background-color: #acd3f5;
       padding: 20px;
       font-weight: bold;
-      ul{
+      ul {
         font-weight: normal;
         padding: 0px 20px;
-
       }
     }
-    button{
+    button {
       padding: 8px;
       background: #4c98dd;
       color: white;
@@ -258,29 +257,29 @@ h1 {
   }
 }
 
-.error{
+.error {
   border-left: 2px solid red;
   background-color: rgb(247, 202, 202);
   color: red;
   padding: 5px;
 }
 
-.reset-password{
+.reset-password {
   width: 100%;
   max-width: 500px;
   box-shadow: 1px 2px 5px 2px;
   padding: 25px;
   margin: 30px auto;
-  form{
+  form {
     display: flex;
     flex-direction: column;
     margin: 30px;
     gap: 10px;
-    input{
+    input {
       padding: 5px 10px;
       outline: none;
     }
-    button{
+    button {
       padding: 8px;
       background: #4c98dd;
       color: white;
@@ -289,7 +288,7 @@ h1 {
   }
 }
 
-.invalid-password{
+.invalid-password {
   width: 100%;
   max-width: 500px;
   box-shadow: 1px 2px 5px 2px;
@@ -297,20 +296,31 @@ h1 {
   margin: 30px auto;
 }
 
-.divider{
+.divider {
   text-align: center;
   margin: 15px;
 }
 
-.auth{
+.auth {
   margin: 15px auto;
   display: flex;
   justify-content: center;
   gap: 10px;
-  a{
+  a {
     color: black;
   }
-  a i{
+  a i {
     font-size: 20px;
+  }
+}
+
+.image {
+  border-radius: 50%;
+  height: 55px;
+  width: 55px;
+  overflow: hidden;
+  img{
+    width: 100%;
+    height: 100%;
   }
 }

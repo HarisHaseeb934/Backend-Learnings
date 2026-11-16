@@ -19,6 +19,31 @@
                 <li class="li"><a href='/<%= shortCode %>' target="_blank"><%= host %>/<%= shortCode %></a> <a href="/edit/<%= id %>">Edit</a> <form action="/delete/<%= id %>" method="post"><button type="submit">Delete</button></form></li>
             <% }) %>
         </ul>
+
+        <% if (totalPages > 1) { %>
+    <% if (currentPage > 1) { %>
+        <a href="?page=<%= currentPage - 1 %>">
+            <span>Prev</span>
+        </a>
+    <% } %>
+
+    <% pagination.forEach(p => { %>
+        <% if (p === '...') { %>
+            <span>...</span>
+        <% } else { %>
+            <a href="?page=<%= p %>"><%= p %></a>
+        <% } %>
+    <% }) %>
+    
+    <% if (currentPage < totalPages) { %>
+        <a href="?page=<%= currentPage + 1 %>">
+            <span>Next</span>
+        </a>
+    <% } %>
+<% } %>
+
+
+
     </main>
 
 <%- include('./partials/footer') %>

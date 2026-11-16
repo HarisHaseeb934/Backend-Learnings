@@ -1,12 +1,19 @@
 import crypto from "crypto";
 import z from "zod";
 import { UrlShortener } from "../models/URLShortener.js";
-import { deleteLinkFromUser } from "../services/authServices.js";
+import { createPagination, deleteLinkFromUser, getShortLinks,  } from "../services/authServices.js";
+import { pageSchema } from "../validators/userValidationSchema.js";
 
 export const getHomePage = async (req, res) => {
   if (!req.user) return res.redirect("/login");
-  const links = await UrlShortener.find({ user: req.user.id });
-  res.render("index", { links, host: req.host });
+  const queryPage = pageSchema.parse(req.query);
+  const { shortLinks, currentPage, totalPages } = await getShortLinks({
+    user: req.user.id,
+    page: queryPage.page,
+    limit: 10,
+  });
+  const pagination = createPagination(currentPage, totalPages)
+  res.render("index", { links: shortLinks, currentPage, totalPages, host: req.host, pagination});
 };
 
 export const getFromData = async (req, res) => {

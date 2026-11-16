@@ -106,7 +106,6 @@ export const postRegister = async (req, res) => {
   const result = registerUserSchema.safeParse(req.body);
   if (!result.success) {
     const errorMessageObj = result.error.flatten().fieldErrors;
-    console.log(errorMessageObj);
     req.flash("error", errorMessageObj);
     return res.redirect("/register");
   }
@@ -171,6 +170,8 @@ export const getProfilePage = async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      avatarUrl: user.avatarUrl,
+      hasPassword: Boolean(user.password),
       isEmailValid: user.isEmailVerified,
       shortLinks: shortLinks,
       createdAt: user.createdAt,
@@ -227,7 +228,6 @@ export const verifyEmailToken = async (req, res) => {
 
 export const getEditProfilePage = (req, res, next) => {
   if (!req.user) return next(new AppError("user is not found", 400));
-  console.log(req.user.name);
   res.render("auth/editProfile", {
     name: req.user.name,
     errors: req.flash("errors"),
@@ -239,7 +239,6 @@ export const getEditProfile = async (req, res, next) => {
   if (!result.success) {
     const errorObject = result.error.flatten().fieldErrors;
     req.flash("errors", errorObject);
-    console.log(errorObject);
     return res.redirect("/edit-profile");
   }
   const user = await User.findByIdAndUpdate(
@@ -273,7 +272,6 @@ export const postChangePassword = async (req, res, next) => {
     res.redirect("/");
   }
   const isMatch = await user.comparePassword(result.data.currentPassword);
-  console.log(isMatch);
   if (!isMatch) {
     req.flash("singleError", "Enter Correct Password");
     return res.redirect("/change-password");
@@ -412,7 +410,7 @@ export const getGoogleCallback = async (req, res) => {
     );
 
     const googleUser = await userRes.json();
-    const { id: googleUserId, name, email } = googleUser;
+    const { id: googleUserId, name, email, picture } = googleUser;
 
     let user = await getUserWithOAuthId({
       provider: "google",
@@ -421,18 +419,21 @@ export const getGoogleCallback = async (req, res) => {
 
     if (user) {
       if (!user.providerAccountId) {
-        await linkUserWithOAuth({
+        await linkUserWithOAuth(user.id, picture, {
           user: user.id,
           provider: "google",
           providerAccountId: googleUserId,
         });
       }
+      user.providerAccountId = googleUserId;
+      user.avatarUrl = picture;
     } else {
       user = await createUserWithOauth({
         name,
         email,
         googleUserId,
         isEmailVerified: true,
+        avatarUrl: picture,
         provider: "google",
       });
     }
@@ -464,7 +465,6 @@ export const getGoogleCallback = async (req, res) => {
 
     res.redirect("/");
   } catch (error) {
-    console.error("Google OAuth Error:", error);
     req.flash("errors", "Authentication failed. Please try again.");
     res.redirect("/login");
   }
@@ -539,7 +539,7 @@ export const getGithubCallback = async (req, res) => {
     let githubUserId = String(githubUser.id);
     let githubUserName = githubUser.name || githubUser.login;
     let githubUserEmail = githubUser.email;
-
+    let githubUserAvatar = githubUser.avatar_url;
     if (!githubUserEmail) {
       const emailRes = await fetch("https://api.github.com/user/emails", {
         headers: {
@@ -547,31 +547,33 @@ export const getGithubCallback = async (req, res) => {
           "User-Agent": "NodeJS-App",
         },
       });
-      
+
       const emails = await emailRes.json();
-      
+
       const primaryEmail = emails.find((e) => e.primary && e.verified);
       githubUserEmail = primaryEmail ? primaryEmail.email : emails[0]?.email;
     }
-   
+
     if (!githubUserEmail) {
       throw new Error(
         "Could not retrieve a verified email address from GitHub.",
       );
     }
-    
+
     let user = await getUserWithOAuthId({
       email: githubUserEmail,
       provider: "github",
     });
+
     if (user) {
       if (!user.providerAccountId) {
-        await linkUserWithOAuth({
+        await linkUserWithOAuth(user.id, githubUserAvatar, {
           user: user.id,
           provider: "github",
           providerAccountId: githubUserId,
         });
         user.providerAccountId = githubUserId;
+        user.user.avatarUrl = githubUserAvatar;
       }
     } else {
       user = await createUserWithOauth({
@@ -579,6 +581,7 @@ export const getGithubCallback = async (req, res) => {
         email: githubUserEmail,
         isEmailVerified: true,
         provider: "github",
+        avatarUrl: githubUserAvatar,
         providerAccountId: githubUserId,
       });
     }
@@ -615,4 +618,34 @@ export const getGithubCallback = async (req, res) => {
     req.flash("errors", "Authentication failed please tryagain");
     res.redirect("/login");
   }
+};
+
+export const getSetPasswordPage = async (req, res) => {
+  if (!req.user) return res.redirect("/login");
+  res.render("auth/setPassword", {
+    errors: req.flash("errors"),
+    singleError: req.flash("singleError"),
+  });
+};
+
+export const postSetPasswordPage = async (req, res) => {
+  if (!req.user) return res.redirect("/login");
+  const result = verifyChangePassword.safeParse(req.body);
+  if (!result.success) {
+    const error = z.flattenError(result.error);
+    req.flash("errors", Object.entries(error.fieldErrors));
+    return res.redirect("/set-password");
+  }
+
+  const { newPassword } = result.data;
+
+  const user = await User.findById(req.user.id);
+  if (user.password) {
+    req.flash("errors", Object.entries(error.fieldErrors));
+    return res.redirect("/change-password");
+  }
+
+  user.password = newPassword;
+  await user.save();
+  return res.redirect("/profile");
 };
