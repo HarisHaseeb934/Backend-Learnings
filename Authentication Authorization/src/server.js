@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 import { verfiyAuthentication } from "./middleware/verifyMiddleware.js";
 import session from 'express-session'
 import flash from 'connect-flash'
+import path from "path";
 
 const app = express();
 

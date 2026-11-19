@@ -19,31 +19,45 @@
                 <li class="li"><a href='/<%= shortCode %>' target="_blank"><%= host %>/<%= shortCode %></a> <a href="/edit/<%= id %>">Edit</a> <form action="/delete/<%= id %>" method="post"><button type="submit">Delete</button></form></li>
             <% }) %>
         </ul>
-
-        <% if (totalPages > 1) { %>
-    <% if (currentPage > 1) { %>
-        <a href="?page=<%= currentPage - 1 %>">
-            <span>Prev</span>
-        </a>
-    <% } %>
-
-    <% pagination.forEach(p => { %>
-        <% if (p === '...') { %>
-            <span>...</span>
-        <% } else { %>
-            <a href="?page=<%= p %>"><%= p %></a>
-        <% } %>
-    <% }) %>
-    
-    <% if (currentPage < totalPages) { %>
-        <a href="?page=<%= currentPage + 1 %>">
-            <span>Next</span>
-        </a>
-    <% } %>
-<% } %>
-
-
-
     </main>
+    <div class="pagination">
+        <%
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+        %>
+
+        <% if(totalPages > 1){ %>
+            <% if(currentPage > 1){ %>
+                <a href = '?page=<%= currentPage - 1 %>'>Prev</a>
+            <% }else{ %>
+                <a disabled>Prev</a>
+            <% } %>
+
+            <% if(startPage > 1){ %>
+                <a href = '?page=<%= 1 %>'>1</a>
+                <% if(startPage - 1 > 1){ %>
+                <span>...</span>
+                <% } %>
+            <% } %>
+
+            <% for(let i = startPage; i <= endPage; i++){ %>
+                <a href="?page=<%= i %>"><%= i %></a>
+            <% } %>
+            
+            <% if(endPage < totalPages){ %>
+                <% if(endPage < totalPages - 1){ %>
+                <span>...</span>
+                <% } %>
+                <a href = '?page=<%= totalPages %>'><%= totalPages %></a>
+            <% } %>
+
+            <% if(currentPage < totalPages){ %>
+                <a href = '?page=<%= currentPage + 1 %>'>Next</a>
+            <% }else{ %>
+                <a disabled>Next</a>
+            <% } %>
+        <% } %>
+    </div>
+
 
 <%- include('./partials/footer') %>

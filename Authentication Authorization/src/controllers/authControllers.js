@@ -80,6 +80,7 @@ export const postLogin = async (req, res) => {
     id: userExists._id,
     name: userExists.name,
     email: userExists.email,
+    avatarUrl: userExists.avatarUrl,
     isEmailValid: userExists.isEmailVerified,
     sessionId: session._id,
   });
@@ -130,6 +131,7 @@ export const postRegister = async (req, res) => {
     id: register._id,
     name: register.name,
     email: register.email,
+    avatarUrl: register.avatarUrl,
     isEmailValid: register.isEmailVerified,
     sessionId: session._id,
   });
@@ -226,10 +228,12 @@ export const verifyEmailToken = async (req, res) => {
   res.redirect("/profile");
 };
 
-export const getEditProfilePage = (req, res, next) => {
+export const getEditProfilePage = async(req, res, next) => {
   if (!req.user) return next(new AppError("user is not found", 400));
+  const user = await User.findById(req.user.id)
   res.render("auth/editProfile", {
-    name: req.user.name,
+    name: user.name,
+    avatarUrl: user.avatarUrl,
     errors: req.flash("errors"),
   });
 };
@@ -241,9 +245,12 @@ export const getEditProfile = async (req, res, next) => {
     req.flash("errors", errorObject);
     return res.redirect("/edit-profile");
   }
+
+  const avatarUrl = `/uploads/${req.file.filename}`
+
   const user = await User.findByIdAndUpdate(
     req.user.id,
-    { $set: { name: result.data.name } },
+    { $set: { name: result.data.name, avatarUrl} },
     { new: true, runValidators: true },
   );
   if (!user) return next(new AppError("Error Occurs", 404));

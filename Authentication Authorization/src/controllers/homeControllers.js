@@ -13,7 +13,8 @@ export const getHomePage = async (req, res) => {
     limit: 10,
   });
   const pagination = createPagination(currentPage, totalPages)
-  res.render("index", { links: shortLinks, currentPage, totalPages, host: req.host, pagination});
+  res.render("index", { links: shortLinks, currentPage, totalPages, host: req.host});
+  // res.render("index", { links: shortLinks, currentPage, totalPages, host: req.host, pagination});
 };
 
 export const getFromData = async (req, res) => {

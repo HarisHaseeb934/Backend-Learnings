@@ -2,7 +2,27 @@
 
 <main class="edit-profile-container">
     <h1>Edit Your Profile</h1>
-    <form action="/edit-profile" method="post">
+    <form action="/edit-profile" method="post" enctype="multipart/form-data">
+        <div>
+            <div>
+                <img src="<%= avatarUrl ? avatarUrl : '' %>" 
+                alt="avatarUrl" 
+                id="avatarPreview"
+                style="<%= avatarUrl ? '' : 'display: none;' %>"
+                >
+                <% if(!avatarUrl){ %>
+                    <div class="letter"><%= name.charAt(0).toUpperCase() %></div>
+                <% } %>
+            </div>
+
+            <div>
+                <label for="avatar">Change Photo</label>
+                <input type="file" id="avatar" name = 'avatar' accept="image/*">
+                <% if(avatarUrl){ %>
+                    <button type="button" id="remove">Remove</button>
+                <% } %>
+            </div>
+        </div>
         <input type="text" name="name" value='<%= name %>'>
         <% if(errors && errors.length > 0){ %>
             <% errors.forEach(error => { %>
@@ -16,3 +36,36 @@
 </main>
 
 <%- include('../partials/footer') %>
+
+<script>
+    let preview = document.getElementById('avatarPreview')
+    let letter = document.querySelector('.letter')
+    let choose = document.getElementById('avatar')
+    let urlObject = null;
+    choose.addEventListener('change', (e) => {
+        const file = e.target.files[0]
+        console.log("running")
+        if(file){
+            if(urlObject){
+                URL.revokeObjectURL(urlObject)
+            }
+            urlObject = URL.createObjectURL(file)
+            preview.src = urlObject;
+            preview.style.display = 'block'
+
+            if(letter){
+                letter.style.display = 'none'
+            }
+        }
+    })
+    document.getElementById('remove').addEventListener('click', (e) => {
+        preview.src.value = '';
+        choose.value = ''
+        preview.style.display = 'none'
+
+        if(urlObject){
+            URL.revokeObjectURL(urlObject)
+            urlObject = none
+        }
+    })
+</script>
